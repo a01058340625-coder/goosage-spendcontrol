@@ -1,0 +1,21 @@
+spring:
+  config:
+    activate:
+      on-profile: edge
+
+  datasource:
+    url: jdbc:mysql://EDGE_HOST:3306/goosage_edge?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: edge_user
+    password: edge_pw
+
+  security:
+    user:
+      name: user
+      password: goosage-dev
+
+server:
+  port: 8083
+
+logging:
+  file:
+    name: logs/edge.log

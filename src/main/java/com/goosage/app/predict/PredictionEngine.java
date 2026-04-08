@@ -1,0 +1,84 @@
+package com.goosage.app.predict;
+
+import java.util.Comparator;
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+
+import com.goosage.domain.predict.Prediction;
+import com.goosage.domain.predict.PredictionRule;
+import com.goosage.domain.predict.vector.BehaviorPattern;
+import com.goosage.domain.predict.vector.ObservationVector;
+import com.goosage.domain.predict.vector.VectorConverter;
+import com.goosage.domain.predict.vector.VectorMatcher;
+import com.goosage.domain.recovery.RecoverySnapshot;
+
+@Component
+public class PredictionEngine {
+
+    private final List<PredictionRule> rules;
+    private final VectorConverter vectorConverter;
+    private final VectorMatcher vectorMatcher;
+
+    public PredictionEngine(List<PredictionRule> rules,
+                            VectorConverter vectorConverter,
+                            VectorMatcher vectorMatcher) {
+        this.vectorConverter = vectorConverter;
+        this.vectorMatcher = vectorMatcher;
+
+        this.rules = rules.stream()
+                .sorted(Comparator.comparingInt(PredictionRule::priority))
+                .toList();
+
+        System.out.println("=== PREDICTION RULE ORDER ===");
+        for (PredictionRule r : this.rules) {
+            System.out.println(r.getClass().getName() + " / priority=" + r.priority());
+        }
+        System.out.println("=== END RULE ORDER ===");
+    }
+
+    public Prediction predict(RecoverySnapshot s) {
+        System.out.println("=== PREDICT START ===");
+        System.out.println("studiedToday=" + s.studiedToday()
+                + ", streakDays=" + s.streakDays()
+                + ", recentEventCount3d=" + s.recentEventCount3d()
+                + ", daysSinceLastEvent=" + s.daysSinceLastEvent()
+                + ", eventsCount=" + (s.state() != null ? s.state().eventsCount() : -1)
+                + ", quizSubmits=" + (s.state() != null ? s.state().quizSubmits() : -1)
+                + ", wrongReviews=" + (s.state() != null ? s.state().wrongReviews() : -1)
+                + ", wrongReviewDoneCount=" + (s.state() != null ? s.state().wrongReviewDoneCount() : -1));
+
+        ObservationVector vector = vectorConverter.from(s);
+        BehaviorPattern pattern = vectorMatcher.match(vector);
+
+        System.out.println("[VECTOR] activity=" + vector.activity()
+                + ", openRatio=" + vector.openRatio()
+                + ", quizRatio=" + vector.quizRatio()
+                + ", wrongRatio=" + vector.wrongRatio()
+                + ", wrongDoneRatio=" + vector.wrongDoneRatio()
+                + ", recentScore=" + vector.recentScore()
+                + ", streakScore=" + vector.streakScore()
+                + ", recencyPenalty=" + vector.recencyPenalty());
+
+        System.out.println("[VECTOR] nearestPattern=" + pattern
+                + ", distance=" + vectorMatcher.distanceTo(vector, pattern));
+
+        for (PredictionRule r : rules) {
+            boolean matched = r.matches(s);
+            System.out.println("[RULE] " + r.getClass().getName()
+                    + " / priority=" + r.priority()
+                    + " / matched=" + matched);
+
+            if (matched) {
+                Prediction p = r.apply(s);
+                System.out.println("[APPLY] " + r.getClass().getName()
+                        + " => level=" + p.level()
+                        + ", reason=" + p.reasonCode());
+                System.out.println("=== PREDICT END ===");
+                return p;
+            }
+        }
+
+        throw new IllegalStateException("No PredictionRule matched. DefaultFallbackRule missing?");
+    }
+}
