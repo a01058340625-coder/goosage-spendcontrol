@@ -7,7 +7,7 @@ import com.goosage.domain.predict.Prediction;
 import com.goosage.domain.predict.PredictionLevel;
 import com.goosage.domain.predict.PredictionReasonCode;
 import com.goosage.domain.predict.PredictionRule;
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
 public class GoodProgressRule implements PredictionRule {
@@ -18,7 +18,7 @@ public class GoodProgressRule implements PredictionRule {
     }
 
     @Override
-    public boolean matches(RecoverySnapshot s) {
+    public boolean matches(SpendControlSnapshot s) {
         return s.studiedToday()
                 && s.state().eventsCount() >= 5
                 && s.quizRatio() >= 0.5
@@ -26,7 +26,7 @@ public class GoodProgressRule implements PredictionRule {
     }
 
     @Override
-    public Prediction apply(RecoverySnapshot s) {
+    public Prediction apply(SpendControlSnapshot s) {
         return Prediction.of(
                 PredictionLevel.SAFE,
                 PredictionReasonCode.GOOD_PROGRESS,

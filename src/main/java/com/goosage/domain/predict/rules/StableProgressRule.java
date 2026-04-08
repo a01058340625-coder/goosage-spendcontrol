@@ -8,7 +8,7 @@ import com.goosage.domain.predict.Prediction;
 import com.goosage.domain.predict.PredictionLevel;
 import com.goosage.domain.predict.PredictionReasonCode;
 import com.goosage.domain.predict.PredictionRule;
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
 public class StableProgressRule implements PredictionRule {
@@ -19,7 +19,7 @@ public class StableProgressRule implements PredictionRule {
     }
 
     @Override
-    public boolean matches(RecoverySnapshot s) {
+    public boolean matches(SpendControlSnapshot s) {
         if (s == null || s.state() == null) {
             return false;
         }
@@ -40,7 +40,7 @@ public class StableProgressRule implements PredictionRule {
     }
 
     @Override
-    public Prediction apply(RecoverySnapshot s) {
+    public Prediction apply(SpendControlSnapshot s) {
         return Prediction.of(
                 PredictionLevel.WARNING,
                 PredictionReasonCode.STABLE_PROGRESS,

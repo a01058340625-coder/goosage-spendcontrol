@@ -8,7 +8,7 @@ import com.goosage.domain.predict.Prediction;
 import com.goosage.domain.predict.PredictionLevel;
 import com.goosage.domain.predict.PredictionReasonCode;
 import com.goosage.domain.predict.PredictionRule;
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
 public class LowActivity3dRule implements PredictionRule {
@@ -19,7 +19,7 @@ public class LowActivity3dRule implements PredictionRule {
     }
 
     @Override
-    public boolean matches(RecoverySnapshot s) {
+    public boolean matches(SpendControlSnapshot s) {
         if (s.studiedToday()) return false;
 
         if (s.daysSinceLastEvent() >= 3) return false;
@@ -29,7 +29,7 @@ public class LowActivity3dRule implements PredictionRule {
     }
 
     @Override
-    public Prediction apply(RecoverySnapshot s) {
+    public Prediction apply(SpendControlSnapshot s) {
         return Prediction.of(
                 PredictionLevel.WARNING,
                 PredictionReasonCode.LOW_ACTIVITY_3D,

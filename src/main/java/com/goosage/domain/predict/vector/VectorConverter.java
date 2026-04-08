@@ -2,12 +2,12 @@ package com.goosage.domain.predict.vector;
 
 import org.springframework.stereotype.Component;
 
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
 public class VectorConverter {
 
-    public ObservationVector from(RecoverySnapshot s) {
+    public ObservationVector from(SpendControlSnapshot s) {
         double activity = clamp((s.state() != null ? s.state().eventsCount() : 0) / 6.0);
         double openRatio = s.openRatio();
         double quizRatio = s.quizRatio();

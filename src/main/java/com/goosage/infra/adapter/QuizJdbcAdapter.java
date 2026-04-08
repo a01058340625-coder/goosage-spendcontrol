@@ -1,58 +1,80 @@
 package com.goosage.infra.adapter;
 
-import java.util.List;
-import org.springframework.stereotype.Repository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
-import com.goosage.domain.EventType;
-import com.goosage.domain.quiz.QuizPort;
-import com.goosage.infra.dao.QuizItemDao;
-import com.goosage.infra.dao.QuizResultDao;
-import com.goosage.infra.dao.QuizResultDao.QuizResultRow;
-import com.goosage.infra.dao.RecoveryEventDao;
+import org.springframework.stereotype.Component;
 
-@Repository
-public class QuizJdbcAdapter implements QuizPort {
+import com.goosage.domain.spendcontrol.SpendControlReadPort;
+import com.goosage.domain.spendcontrol.TodayRow;
+import com.goosage.infra.dao.SpendControlReadDao;
 
-    private final QuizResultDao quizResultDao;
-    private final QuizItemDao quizItemDao;
-    private final RecoveryEventDao recoveryEventDao;
+@Component
+public class SpendControlReadDaoAdapter implements SpendControlReadPort {
 
-    public QuizJdbcAdapter(QuizResultDao quizResultDao, QuizItemDao quizItemDao, RecoveryEventDao recoveryEventDao) {
-        this.quizResultDao = quizResultDao;
-        this.quizItemDao = quizItemDao;
-        this.recoveryEventDao = recoveryEventDao;
+    private final SpendControlReadDao dao;
+
+    public SpendControlReadDaoAdapter(SpendControlReadDao dao) {
+        this.dao = dao;
     }
 
     @Override
-    public List<QuizResultRow> findByKnowledgeId(long knowledgeId) {
-        return quizResultDao.findByKnowledgeId(knowledgeId);
+    public Optional<TodayRow> findToday(long userId, LocalDate today) {
+        return dao.findToday(userId)
+                .map(r -> new TodayRow(
+                        r.ymd(),
+                        r.eventsCount(),
+                        r.quizSubmits(),
+                        r.wrongReviews(),
+                        r.wrongReviewDoneCount(),
+                        null
+                ));
     }
 
     @Override
-    public QuizResultRow findLatestByKnowledgeId(long knowledgeId) {
-        return quizResultDao.findLatestByKnowledgeId(knowledgeId);
+    public Optional<LocalDateTime> lastEventAtAll(long userId) {
+        return dao.lastEventAtAll(userId);
     }
 
     @Override
-    public QuizResultRow findLatestByUserAndKnowledgeId(long userId, long knowledgeId) {
-        return quizResultDao.findLatestByUserAndKnowledgeId(userId, knowledgeId);
+    public int recentEventCount3d(long userId, LocalDate today) {
+        return dao.recentEventCount3d(userId, today);
     }
 
     @Override
-    public void saveResultAndRecordEvent(long userId, long knowledgeId, int total, int correct, int percent,
-                                        int wrongCount, String detailsJson) {
-
-        quizResultDao.save(userId, knowledgeId, total, correct, percent, wrongCount, detailsJson);
-        recoveryEventDao.recordEvent(userId, EventType.BET_ATTEMPT, "KNOWLEDGE", knowledgeId, detailsJson);
+    public int calcStreakDays(long userId, LocalDate today) {
+        return dao.calcStreakDays(userId, today);
     }
 
     @Override
-    public boolean quizItemsExist(long knowledgeId) {
-        return quizItemDao.exists(knowledgeId);
+    public int todayEventCountFromEvents(long userId, LocalDate today) {
+        return dao.todayEventCountFromEvents(userId, today);
+    }
+
+    // 🔥 이름만 바꿔서 매핑
+    @Override
+    public int recentRiskSignal3d(long userId, LocalDate today) {
+        return dao.recentWrong3d(userId, today);
     }
 
     @Override
-    public void insertQuizItem(long knowledgeId, int no, String question, String expected) {
-        quizItemDao.insert(knowledgeId, no, question, expected);
+    public int recentRecoveryAction3d(long userId, LocalDate today) {
+        return dao.recentWrongDone3d(userId, today);
+    }
+
+    @Override
+    public int todayRiskSignalFromEvents(long userId, LocalDate today) {
+        return dao.todayWrongFromEvents(userId, today);
+    }
+
+    @Override
+    public int todayRecoveryActionFromEvents(long userId, LocalDate today) {
+        return dao.todayWrongDoneFromEvents(userId, today);
+    }
+
+    @Override
+    public int todayActionFromEvents(long userId, LocalDate today) {
+        return dao.todayQuizFromEvents(userId, today);
     }
 }

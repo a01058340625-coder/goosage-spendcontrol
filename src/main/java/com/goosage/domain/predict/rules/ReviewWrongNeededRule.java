@@ -8,12 +8,10 @@ import com.goosage.domain.predict.Prediction;
 import com.goosage.domain.predict.PredictionLevel;
 import com.goosage.domain.predict.PredictionReasonCode;
 import com.goosage.domain.predict.PredictionRule;
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
 public class ReviewWrongNeededRule implements PredictionRule {
-
-    private static final int ACTION_MIN = 1;
 
     @Override
     public int priority() {
@@ -21,7 +19,7 @@ public class ReviewWrongNeededRule implements PredictionRule {
     }
 
     @Override
-    public boolean matches(RecoverySnapshot s) {
+    public boolean matches(SpendControlSnapshot s) {
         if (s == null || s.state() == null) {
             return false;
         }
@@ -37,11 +35,11 @@ public class ReviewWrongNeededRule implements PredictionRule {
     }
 
     @Override
-    public Prediction apply(RecoverySnapshot s) {
+    public Prediction apply(SpendControlSnapshot s) {
         return Prediction.of(
                 PredictionLevel.WARNING,
                 PredictionReasonCode.REVIEW_WRONG_PENDING,
-                "위험 신호가 남아 있어. 하나씩 회복 행동으로 정리하자.",
+                "충동 신호가 남아 있어. 하나씩 제어 행동으로 정리하자.",
                 Map.of(
                         "studiedToday", s.studiedToday(),
                         "streakDays", s.streakDays(),

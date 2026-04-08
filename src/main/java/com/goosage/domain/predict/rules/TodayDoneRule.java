@@ -9,7 +9,7 @@ import com.goosage.domain.predict.Prediction;
 import com.goosage.domain.predict.PredictionLevel;
 import com.goosage.domain.predict.PredictionReasonCode;
 import com.goosage.domain.predict.PredictionRule;
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
 public class TodayDoneRule implements PredictionRule {
@@ -24,7 +24,7 @@ public class TodayDoneRule implements PredictionRule {
     }
 
     @Override
-    public boolean matches(RecoverySnapshot s) {
+    public boolean matches(SpendControlSnapshot s) {
         if (!s.studiedToday()) {
             return false;
         }
@@ -42,7 +42,7 @@ public class TodayDoneRule implements PredictionRule {
     }
 
     @Override
-    public Prediction apply(RecoverySnapshot s) {
+    public Prediction apply(SpendControlSnapshot s) {
         return Prediction.of(
                 PredictionLevel.SAFE,
                 PredictionReasonCode.TODAY_DONE,

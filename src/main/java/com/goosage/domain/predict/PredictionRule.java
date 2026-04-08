@@ -1,9 +1,9 @@
 package com.goosage.domain.predict;
 
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 public interface PredictionRule {
     int priority();
-    boolean matches(RecoverySnapshot s);
-    Prediction apply(RecoverySnapshot s);
+    boolean matches(SpendControlSnapshot s);
+    Prediction apply(SpendControlSnapshot s);
 }

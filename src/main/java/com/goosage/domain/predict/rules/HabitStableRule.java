@@ -8,52 +8,68 @@ import com.goosage.domain.predict.Prediction;
 import com.goosage.domain.predict.PredictionLevel;
 import com.goosage.domain.predict.PredictionReasonCode;
 import com.goosage.domain.predict.PredictionRule;
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
-public class HabitStableRule implements PredictionRule {
+public class FalseSpendControlGuardRule implements PredictionRule {
+
+    private static final int EVENTS_MIN = 5;
+    private static final double OPEN_RATIO_MAX = 0.55;
+    private static final double QUIZ_RATIO_MIN = 0.30;
 
     @Override
     public int priority() {
-        return 25;
+        return 14;
     }
 
     @Override
-    public boolean matches(RecoverySnapshot s) {
-        if (s == null || s.state() == null) {
-            return false;
-        }
-
-        if (!s.studiedToday()) {
-            return false;
-        }
-
+    public boolean matches(SpendControlSnapshot s) {
+        int events = s.state().eventsCount();
+        int quiz = s.state().quizSubmits();
         int wrong = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
+        int wrongDone = s.state().wrongReviewDoneCount();
 
-        // recovery-safe 케이스는 여기서 제외
-        if (wrong == 0 && done > 0) {
+        if (events < EVENTS_MIN) {
             return false;
         }
 
-        return s.streakDays() >= 3
-                && s.recentEventCount3d() >= 3;
+        if (wrongDone <= 0) {
+            return false;
+        }
+
+        double openRatio = events <= 0 ? 0.0 : (double) s.state().justOpenCount() / events;
+        double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
+
+        boolean noWrongContext = wrong == 0;
+        boolean lowQuizQuality = quizRatio < QUIZ_RATIO_MIN;
+        boolean openHeavy = openRatio > OPEN_RATIO_MAX;
+
+        return noWrongContext && (lowQuizQuality || openHeavy);
     }
 
     @Override
-    public Prediction apply(RecoverySnapshot s) {
+    public Prediction apply(SpendControlSnapshot s) {
+        int events = s.state().eventsCount();
+        int quiz = s.state().quizSubmits();
+        int wrong = s.state().wrongReviews();
+        int wrongDone = s.state().wrongReviewDoneCount();
+
+        double openRatio = events <= 0 ? 0.0 : (double) s.state().justOpenCount() / events;
+        double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
+
         return Prediction.of(
-                PredictionLevel.SAFE,
-                PredictionReasonCode.HABIT_STABLE,
-                "학습 습관이 안정화되고 있다. 지금 리듬을 유지하자.",
+                PredictionLevel.WARNING,
+                PredictionReasonCode.RECOVERY_PROGRESS,
+                "제어 완료 기록이 일부 있지만 실제 소비 제어 흐름으로 보기엔 행동 맥락이 아직 약하다. 제어 행동 1회로 흐름을 확인하자.",
                 Map.of(
-                        "streakDays", s.streakDays(),
-                        "recentEventCount3d", s.recentEventCount3d(),
-                        "daysSinceLastEvent", s.daysSinceLastEvent(),
-                        "eventsCount", s.state().eventsCount(),
-                        "quizSubmits", s.state().quizSubmits(),
-                        "wrongReviews", s.state().wrongReviews(),
-                        "wrongReviewDoneCount", s.state().wrongReviewDoneCount()
+                        "eventsCount", events,
+                        "quizSubmits", quiz,
+                        "wrongReviews", wrong,
+                        "wrongReviewDoneCount", wrongDone,
+                        "openRatio", openRatio,
+                        "quizRatio", quizRatio,
+                        "openRatioMax", OPEN_RATIO_MAX,
+                        "quizRatioMin", QUIZ_RATIO_MIN
                 )
         );
     }

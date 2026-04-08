@@ -9,7 +9,7 @@ import com.goosage.domain.predict.Prediction;
 import com.goosage.domain.predict.PredictionLevel;
 import com.goosage.domain.predict.PredictionReasonCode;
 import com.goosage.domain.predict.PredictionRule;
-import com.goosage.domain.recovery.RecoverySnapshot;
+import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
 public class DataPoorDefaultRule implements PredictionRule {
@@ -18,7 +18,7 @@ public class DataPoorDefaultRule implements PredictionRule {
     public int priority() { return 20; }
 
     @Override
-    public boolean matches(RecoverySnapshot s) {
+    public boolean matches(SpendControlSnapshot s) {
         if (s.studiedToday()) return false;
 
         if (s.daysSinceLastEvent() >= 3) return false;
@@ -27,7 +27,7 @@ public class DataPoorDefaultRule implements PredictionRule {
     }
 
     @Override
-    public Prediction apply(RecoverySnapshot s) {
+    public Prediction apply(SpendControlSnapshot s) {
 
         Map<String, Object> ev = new LinkedHashMap<>();
         ev.put("recentEventCount3d", s.recentEventCount3d());
