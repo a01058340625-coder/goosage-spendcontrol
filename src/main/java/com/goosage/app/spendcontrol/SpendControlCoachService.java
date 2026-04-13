@@ -8,13 +8,13 @@ import com.goosage.domain.spendcontrol.SpendControlCoachResult;
 @Service
 public class SpendControlCoachService {
 
-    private final SpendControlCoachPort recoveryCoachPort;
+    private final SpendControlCoachPort spendControlCoachPort;
 
-    public SpendControlCoachService(SpendControlCoachPort recoveryCoachPort) {
-        this.recoveryCoachPort = recoveryCoachPort;
+    public SpendControlCoachService(SpendControlCoachPort spendControlCoachPort) {
+        this.spendControlCoachPort = spendControlCoachPort;
     }
 
     public SpendControlCoachResult coach(long userId) {
-        return recoveryCoachPort.execute(userId);
+        return spendControlCoachPort.execute(userId);
     }
 }

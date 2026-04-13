@@ -1,6 +1,5 @@
 package com.goosage.domain.spendcontrol;
 
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -58,7 +57,9 @@ public class SpendControlSnapshotService {
 
     private int calcDaysSinceLastEvent(LocalDateTime lastEventAt, LocalDateTime now) {
         if (lastEventAt == null) return 999;
-        long days = Duration.between(lastEventAt, now).toDays();
-        return (int) Math.max(0, days);
+        return (int) java.time.temporal.ChronoUnit.DAYS.between(
+                lastEventAt.toLocalDate(),
+                now.toLocalDate()
+        );
     }
 }

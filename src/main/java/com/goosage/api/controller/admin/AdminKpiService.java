@@ -14,14 +14,10 @@ public class AdminKpiService {
         this.jdbc = jdbc;
     }
 
-    /**
-     * 오늘(서버 로컬 기준) 이벤트 발생한 사용자 id 목록
-     * - created_at >= CURDATE() : MySQL 서버 날짜 기준
-     */
     public List<Long> findActiveUserIdsToday() {
         String sql = """
             SELECT DISTINCT user_id
-            FROM recovery_events
+            FROM spendcontrol_events
             WHERE created_at >= CURDATE()
             ORDER BY user_id
         """;

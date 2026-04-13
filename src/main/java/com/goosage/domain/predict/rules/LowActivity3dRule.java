@@ -24,8 +24,11 @@ public class LowActivity3dRule implements PredictionRule {
 
         if (s.daysSinceLastEvent() >= 3) return false;
 
+        // 🔥 streak 있으면 보호
+        if (s.streakDays() >= 2) return false;
+
         return s.recentEventCount3d() <= 1
-                && !(s.recentEventCount3d() == 0 && s.streakDays() == 0);
+            && !(s.recentEventCount3d() == 0 && s.streakDays() == 0);
     }
 
     @Override

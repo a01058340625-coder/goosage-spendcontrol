@@ -20,7 +20,7 @@ public class TodayDoneRule implements PredictionRule {
 
     @Override
     public int priority() {
-        return 5;
+        return 20;
     }
 
     @Override
@@ -34,6 +34,12 @@ public class TodayDoneRule implements PredictionRule {
 
         double actionRatio = s.quizRatio();
         double passiveRatio = s.openRatio();
+        
+     // 🔥🔥 핵심 추가 (여기!)
+        // attempt-heavy는 절대 today_done으로 가지 못하게 차단
+        if (action >= 3 && risk == 0) {
+            return false;
+        }
 
         return action >= ACTION_MIN
                 && risk == 0

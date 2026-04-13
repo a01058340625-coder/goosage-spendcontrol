@@ -15,15 +15,15 @@ public class SpendControlStreakDao {
     public int countStreak(long userId) {
         String sql = """
             SELECT COUNT(*)
-            FROM recovery_daily_learning
+            FROM spendcontrol_daily
             WHERE user_id = ?
               AND ymd <= CURDATE()
               AND (
                 SELECT COUNT(*)
-                FROM recovery_daily_learning d2
+                FROM spendcontrol_daily d2
                 WHERE d2.user_id = ?
-                  AND d2.ymd BETWEEN recovery_daily_learning.ymd AND CURDATE()
-              ) = DATEDIFF(CURDATE(), recovery_daily_learning.ymd) + 1
+                  AND d2.ymd BETWEEN spendcontrol_daily.ymd AND CURDATE()
+              ) = DATEDIFF(CURDATE(), spendcontrol_daily.ymd) + 1
         """;
 
         Integer result = jdbcTemplate.queryForObject(sql, Integer.class, userId, userId);

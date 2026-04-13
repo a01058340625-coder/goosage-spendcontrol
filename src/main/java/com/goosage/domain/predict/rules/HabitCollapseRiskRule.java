@@ -20,18 +20,19 @@ public class HabitCollapseRiskRule implements PredictionRule {
 
     @Override
     public boolean matches(SpendControlSnapshot s) {
-        if (s == null) {
-            return false;
-        }
+        if (s == null) return false;
 
-        if (s.studiedToday()) {
-            return false;
-        }
+        if (s.studiedToday()) return false;
 
         int daysSince = s.daysSinceLastEvent();
         int recent3d = s.recentEventCount3d();
 
-        return daysSince >= 2 && recent3d == 0;
+        // 🔥 streak 있으면 collapse 완화
+        if (s.streakDays() >= 2 && daysSince < 4) {
+            return false;
+        }
+
+        return daysSince >= 3 && recent3d == 0;
     }
 
     @Override

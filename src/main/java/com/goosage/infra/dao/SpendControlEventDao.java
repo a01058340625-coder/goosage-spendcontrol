@@ -36,7 +36,7 @@ public class SpendControlEventDao {
     private Long findActiveSessionId(long userId) {
         String sql = """
             SELECT id
-            FROM recovery_sessions
+            FROM spendcontrol_sessions
             WHERE user_id = ?
               AND ended_at IS NULL
             ORDER BY started_at DESC
@@ -49,7 +49,7 @@ public class SpendControlEventDao {
 
     private long createSession(long userId) {
         String sql = """
-            INSERT INTO recovery_sessions (user_id, started_at, total_events, last_event_at)
+            INSERT INTO spendcontrol_sessions (user_id, started_at, total_events, last_event_at)
             VALUES (?, NOW(), 0, NOW())
         """;
 
@@ -61,7 +61,7 @@ public class SpendControlEventDao {
 
     private void insertEvent(long sessionId, long userId, EventType eventType, String refType, Long refId, String payloadJson) {
         String sql = """
-            INSERT INTO recovery_events (
+            INSERT INTO spendcontrol_events (
                 session_id,
                 user_id,
                 type,
@@ -95,7 +95,7 @@ public class SpendControlEventDao {
 
     private void touchSession(long sessionId) {
         String sql = """
-            UPDATE recovery_sessions
+            UPDATE spendcontrol_sessions
             SET total_events = total_events + 1,
                 last_event_at = NOW()
             WHERE id = ?
@@ -110,7 +110,7 @@ public class SpendControlEventDao {
         int wrongDoneInc = (eventType == EventType.PURCHASE_CANCEL_DONE) ? 1 : 0;
 
         String sql = """
-            INSERT INTO recovery_daily_learning (
+            INSERT INTO spendcontrol_daily (
                 user_id,
                 ymd,
                 events_count,

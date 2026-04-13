@@ -12,20 +12,20 @@ import jakarta.servlet.http.HttpSession;
 @RestController
 public class SpendControlStreakController {
 
-    private final SpendControlStreakService recoveryStreakService;
+    private final SpendControlStreakService spendControlStreakService;
 
-    public SpendControlStreakController(SpendControlStreakService recoveryStreakService) {
-        this.recoveryStreakService = recoveryStreakService;
+    public SpendControlStreakController(SpendControlStreakService spendControlStreakService) {
+        this.spendControlStreakService = spendControlStreakService;
     }
 
-    @GetMapping("/recovery/streak")
+    @GetMapping("/spendcontrol/streak")
     public ApiResponse<Integer> streak(HttpSession session) {
         Long userId = (Long) session.getAttribute(SessionConst.LOGIN_USER_ID);
         if (userId == null) {
             return ApiResponse.fail("로그인이 필요합니다");
         }
 
-        int streak = recoveryStreakService.getStreak(userId);
+        int streak = spendControlStreakService.getStreak(userId);
         return ApiResponse.ok(streak);
     }
 }

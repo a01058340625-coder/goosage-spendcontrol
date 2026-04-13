@@ -13,18 +13,15 @@ import com.goosage.domain.predict.PredictionRule;
 import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
-public class SpendControlSafeRule implements PredictionRule {
+public class FalseSpendControlGuardRule implements PredictionRule {
 
-    private static final int EVENTS_MIN = 5;
-    private static final int WRONG_DONE_MIN = 2;
-    private static final int QUIZ_MIN = 2;
     private static final int RECENT_3D_MIN = 3;
-    private static final double OPEN_RATIO_MAX = 0.55;
-    private static final double QUIZ_RATIO_MIN = 0.25;
+    private static final double OPEN_RATIO_MAX_FOR_SAFE = 0.60;
+    private static final double ACTION_RATIO_MIN_FOR_SAFE = 0.20;
 
     @Override
     public int priority() {
-        return 15;
+        return 14;
     }
 
     @Override
@@ -38,75 +35,57 @@ public class SpendControlSafeRule implements PredictionRule {
         }
 
         int events = s.state().eventsCount();
-        int quiz = s.state().quizSubmits();
-        int wrong = s.state().wrongReviews();
+        int action = s.state().quizSubmits();
+        int risk = s.state().wrongReviews();
         int done = s.state().wrongReviewDoneCount();
         int justOpen = s.state().justOpenCount();
 
-        if (wrong != 0) {
+        if (events <= 0) {
             return false;
         }
 
-        if (events < EVENTS_MIN) {
-            return false;
-        }
+        double openRatio = (double) justOpen / events;
+        double actionRatio = (double) action / events;
 
-        if (done < WRONG_DONE_MIN) {
-            return false;
-        }
+        boolean recentEnough = s.recentEventCount3d() >= RECENT_3D_MIN;
+        boolean stillRiskLeft = risk > 0;
+        boolean tooManyOpenOnly = openRatio > OPEN_RATIO_MAX_FOR_SAFE;
+        boolean tooLittleAction = actionRatio < ACTION_RATIO_MIN_FOR_SAFE;
+        boolean noRecoveryDone = done == 0;
 
-        if (quiz < QUIZ_MIN) {
-            return false;
-        }
-
-        if (s.recentEventCount3d() < RECENT_3D_MIN) {
-            return false;
-        }
-
-        double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
-        double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
-
-        if (openRatio > OPEN_RATIO_MAX) {
-            return false;
-        }
-
-        if (quizRatio < QUIZ_RATIO_MIN) {
-            return false;
-        }
-
-        return true;
+        return recentEnough
+                && (stillRiskLeft || tooManyOpenOnly || tooLittleAction || noRecoveryDone);
     }
 
     @Override
     public Prediction apply(SpendControlSnapshot s) {
         int events = s.state().eventsCount();
-        int quiz = s.state().quizSubmits();
-        int wrong = s.state().wrongReviews();
+        int action = s.state().quizSubmits();
+        int risk = s.state().wrongReviews();
         int done = s.state().wrongReviewDoneCount();
         int justOpen = s.state().justOpenCount();
 
         double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
-        double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
+        double actionRatio = events <= 0 ? 0.0 : (double) action / events;
 
         return Prediction.of(
-                PredictionLevel.SAFE,
-                PredictionReasonCode.RECOVERY_SAFE,
-                "복습 완료와 퀴즈 흐름이 함께 유지되어 회복 안정권에 들어왔다.",
+                PredictionLevel.WARNING,
+                PredictionReasonCode.LOW_QUALITY_OPEN,
+                "활동은 있었지만 실제 소비 제어 행동의 질이 낮아 아직 안정 상태로 보기 어렵다.",
                 Map.ofEntries(
                         entry("streakDays", s.streakDays()),
                         entry("daysSinceLastEvent", s.daysSinceLastEvent()),
                         entry("recentEventCount3d", s.recentEventCount3d()),
                         entry("eventsCount", events),
-                        entry("quizSubmits", quiz),
-                        entry("wrongReviews", wrong),
+                        entry("quizSubmits", action),
+                        entry("wrongReviews", risk),
                         entry("wrongReviewDoneCount", done),
+                        entry("justOpenCount", justOpen),
                         entry("studiedToday", s.studiedToday()),
-                        entry("quizMin", QUIZ_MIN),
-                        entry("wrongDoneMin", WRONG_DONE_MIN),
-                        entry("quizRatio", quizRatio),
                         entry("openRatio", openRatio),
-                        entry("quizRatioMin", QUIZ_RATIO_MIN),
-                        entry("openRatioMax", OPEN_RATIO_MAX)
+                        entry("actionRatio", actionRatio),
+                        entry("openRatioMaxForSafe", OPEN_RATIO_MAX_FOR_SAFE),
+                        entry("actionRatioMinForSafe", ACTION_RATIO_MIN_FOR_SAFE)
                 )
         );
     }

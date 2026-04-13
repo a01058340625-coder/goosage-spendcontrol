@@ -63,6 +63,12 @@ public class SpendControlSafeRule implements PredictionRule {
             return false;
         }
 
+        // spendcontrol에서는 quizSubmits 안에 PURCHASE_ATTEMPT가 섞여 있으므로
+        // attempt-heavy 구간은 SAFE로 보내면 안 된다.
+        if (quiz >= 3 && done < quiz) {
+            return false;
+        }
+
         double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
         double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
 

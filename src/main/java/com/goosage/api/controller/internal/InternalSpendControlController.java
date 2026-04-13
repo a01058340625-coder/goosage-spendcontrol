@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.web.server.ResponseStatusException;
 
-import com.goosage.app.SpendControlEventService;
+import com.goosage.app.spendcontrol.SpendControlEventService;
 import com.goosage.domain.EventType;
 import com.goosage.support.web.ApiResponse;
 

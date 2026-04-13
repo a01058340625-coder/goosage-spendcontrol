@@ -1,11 +1,10 @@
-package com.goosage.app;
+package com.goosage.app.spendcontrol;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.goosage.domain.EventType;
 import com.goosage.domain.spendcontrol.SpendControlEventPort;
-import com.goosage.infra.log.EventLogWriter;
 
 @Service
 public class SpendControlEventService {
@@ -18,10 +17,6 @@ public class SpendControlEventService {
 
     @Transactional
     public void record(Long userId, EventType type, Long knowledgeId) {
-        String refType = (knowledgeId == null) ? null : "KNOWLEDGE";
-
-        spendControlEventPort.recordEvent(userId, type, refType, knowledgeId, null);
-
-        EventLogWriter.write(userId, type.name());
+        spendControlEventPort.record(userId, type, knowledgeId);
     }
 }

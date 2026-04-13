@@ -7,13 +7,13 @@ import com.goosage.domain.spendcontrol.SpendControlStreakPort;
 @Service
 public class SpendControlStreakService {
 
-    private final SpendControlStreakPort recoveryStreakPort;
+    private final SpendControlStreakPort spendControlStreakPort;
 
-    public SpendControlStreakService(SpendControlStreakPort recoveryStreakPort) {
-        this.recoveryStreakPort = recoveryStreakPort;
+    public SpendControlStreakService(SpendControlStreakPort spendControlStreakPort) {
+        this.spendControlStreakPort = spendControlStreakPort;
     }
 
     public int getStreak(long userId) {
-        return recoveryStreakPort.countStreak(userId);
+        return spendControlStreakPort.countStreak(userId);
     }
 }

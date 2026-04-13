@@ -27,7 +27,7 @@ public class SpendControlReadDao {
                 "  SUM(CASE WHEN type IN ('ITEM_VIEW', 'PURCHASE_ATTEMPT') THEN 1 ELSE 0 END) AS quiz_submits, " +
                 "  SUM(CASE WHEN type = 'IMPULSE_SIGNAL' THEN 1 ELSE 0 END) AS wrong_reviews, " +
                 "  SUM(CASE WHEN type = 'PURCHASE_CANCEL_DONE' THEN 1 ELSE 0 END) AS wrong_review_done_count " +
-                "FROM recovery_events " +
+                "FROM spendcontrol_events " +
                 "WHERE user_id = ? " +
                 "  AND DATE(created_at) = CURDATE() " +
                 "HAVING COUNT(*) > 0";
@@ -53,7 +53,7 @@ public class SpendControlReadDao {
     }
 
     public Optional<LocalDateTime> lastEventAtAll(long userId) {
-        String sql = "SELECT MAX(created_at) FROM recovery_events WHERE user_id = ?";
+        String sql = "SELECT MAX(created_at) FROM spendcontrol_events WHERE user_id = ?";
         Timestamp ts = jdbcTemplate.queryForObject(sql, Timestamp.class, userId);
         return (ts == null) ? Optional.empty() : Optional.of(ts.toLocalDateTime());
     }
@@ -62,7 +62,7 @@ public class SpendControlReadDao {
 
         String sql =
                 "SELECT DISTINCT DATE(created_at) AS ymd " +
-                "FROM recovery_events " +
+                "FROM spendcontrol_events " +
                 "WHERE user_id = ? " +
                 "ORDER BY ymd DESC";
 
@@ -93,7 +93,7 @@ public class SpendControlReadDao {
     public int todayEventCountFromEvents(long userId, LocalDate today) {
 
         String sql =
-                "SELECT COUNT(*) FROM recovery_events WHERE user_id = ? AND created_at >= ? AND created_at < ?";
+                "SELECT COUNT(*) FROM spendcontrol_events WHERE user_id = ? AND created_at >= ? AND created_at < ?";
 
         Timestamp from = Timestamp.valueOf(today.atStartOfDay());
         Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());
@@ -105,19 +105,30 @@ public class SpendControlReadDao {
     public int recentEventCount3d(long userId, LocalDate today) {
 
         String sql =
-                "SELECT COUNT(*) FROM recovery_events WHERE user_id = ? AND created_at >= ? AND created_at < ?";
+                "SELECT COUNT(*) " +
+                "FROM spendcontrol_events " +
+                "WHERE user_id = ? " +
+                "  AND DATE(created_at) >= ? " +
+                "  AND DATE(created_at) <= ?";
 
-        Timestamp from = Timestamp.valueOf(today.minusDays(2).atStartOfDay());
-        Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());
+        LocalDate fromDate = today.minusDays(2);
+        LocalDate toDate = today;
 
-        Integer cnt = jdbcTemplate.queryForObject(sql, Integer.class, userId, from, to);
+        Integer cnt = jdbcTemplate.queryForObject(
+                sql,
+                Integer.class,
+                userId,
+                java.sql.Date.valueOf(fromDate),
+                java.sql.Date.valueOf(toDate)
+        );
+
         return (cnt == null) ? 0 : cnt;
     }
 
     public int recentWrong3d(long userId, LocalDate today) {
 
         String sql =
-                "SELECT COUNT(*) FROM recovery_events " +
+                "SELECT COUNT(*) FROM spendcontrol_events " +
                 "WHERE user_id = ? AND type = 'IMPULSE_SIGNAL' AND created_at >= ? AND created_at < ?";
 
         Timestamp from = Timestamp.valueOf(today.minusDays(2).atStartOfDay());
@@ -130,7 +141,7 @@ public class SpendControlReadDao {
     public int recentWrongDone3d(long userId, LocalDate today) {
 
         String sql =
-                "SELECT COUNT(*) FROM recovery_events " +
+                "SELECT COUNT(*) FROM spendcontrol_events " +
                 "WHERE user_id = ? AND type = 'PURCHASE_CANCEL_DONE' AND created_at >= ? AND created_at < ?";
 
         Timestamp from = Timestamp.valueOf(today.minusDays(2).atStartOfDay());
@@ -143,7 +154,7 @@ public class SpendControlReadDao {
     public int todayWrongFromEvents(long userId, LocalDate today) {
 
         String sql =
-                "SELECT COUNT(*) FROM recovery_events " +
+                "SELECT COUNT(*) FROM spendcontrol_events " +
                 "WHERE user_id = ? AND type = 'IMPULSE_SIGNAL' AND created_at >= ? AND created_at < ?";
 
         Timestamp from = Timestamp.valueOf(today.atStartOfDay());
@@ -156,7 +167,7 @@ public class SpendControlReadDao {
     public int todayWrongDoneFromEvents(long userId, LocalDate today) {
 
         String sql =
-                "SELECT COUNT(*) FROM recovery_events " +
+                "SELECT COUNT(*) FROM spendcontrol_events " +
                 "WHERE user_id = ? AND type = 'PURCHASE_CANCEL_DONE' AND created_at >= ? AND created_at < ?";
 
         Timestamp from = Timestamp.valueOf(today.atStartOfDay());
@@ -169,7 +180,7 @@ public class SpendControlReadDao {
     public int todayQuizFromEvents(long userId, LocalDate today) {
 
         String sql =
-                "SELECT COUNT(*) FROM recovery_events " +
+                "SELECT COUNT(*) FROM spendcontrol_events " +
                 "WHERE user_id = ? AND type IN ('ITEM_VIEW', 'PURCHASE_ATTEMPT') AND created_at >= ? AND created_at < ?";
 
         Timestamp from = Timestamp.valueOf(today.atStartOfDay());

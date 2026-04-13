@@ -1,20 +1,22 @@
 package com.goosage.infra.dao;
 
 import org.springframework.stereotype.Component;
+
 import com.goosage.domain.EventType;
 import com.goosage.domain.spendcontrol.SpendControlEventPort;
 
 @Component
 public class SpendControlEventDaoAdapter implements SpendControlEventPort {
 
-    private final SpendControlEventDao studyEventDao;
+    private final SpendControlEventDao spendControlEventDao;
 
-    public SpendControlEventDaoAdapter(SpendControlEventDao studyEventDao) {
-        this.studyEventDao = studyEventDao;
+    public SpendControlEventDaoAdapter(SpendControlEventDao spendControlEventDao) {
+        this.spendControlEventDao = spendControlEventDao;
     }
 
     @Override
-    public void recordEvent(long userId, EventType eventType, String refType, Long refId, String payloadJson) {
-        studyEventDao.recordEvent(userId, eventType, refType, refId, payloadJson);
+    public void record(Long userId, EventType type, Long knowledgeId) {
+        String refType = (knowledgeId == null) ? null : "KNOWLEDGE";
+        spendControlEventDao.recordEvent(userId, type, refType, knowledgeId, null);
     }
 }

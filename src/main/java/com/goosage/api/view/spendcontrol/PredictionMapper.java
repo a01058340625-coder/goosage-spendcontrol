@@ -37,6 +37,10 @@ public final class PredictionMapper {
             case WRONG_HEAVY -> CoachPredictionReasonCode.WRONG_HEAVY;
             case LOW_QUALITY_OPEN -> CoachPredictionReasonCode.LOW_QUALITY_OPEN;
             case MINIMUM_ACTION -> CoachPredictionReasonCode.MINIMUM_ACTION;
+            case GOOD_PROGRESS -> CoachPredictionReasonCode.GOOD_PROGRESS;
+            case STABLE_PROGRESS -> CoachPredictionReasonCode.STABLE_PROGRESS;
+            case URGE_HIGH -> CoachPredictionReasonCode.URGE_HIGH;
+            case RELAPSE_RISK -> CoachPredictionReasonCode.RELAPSE_RISK;
             default -> CoachPredictionReasonCode.DEFAULT_FALLBACK;
         };
     }

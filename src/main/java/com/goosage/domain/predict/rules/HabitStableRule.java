@@ -1,5 +1,7 @@
 package com.goosage.domain.predict.rules;
 
+import static java.util.Map.entry;
+
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -11,65 +13,88 @@ import com.goosage.domain.predict.PredictionRule;
 import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
-public class FalseSpendControlGuardRule implements PredictionRule {
+public class HabitStableRule implements PredictionRule {
 
-    private static final int EVENTS_MIN = 5;
-    private static final double OPEN_RATIO_MAX = 0.55;
-    private static final double QUIZ_RATIO_MIN = 0.30;
+    private static final int STREAK_MIN = 3;
+    private static final int RECENT_3D_MIN = 3;
+    private static final int ACTION_MIN = 2;
+    private static final double OPEN_RATIO_MAX = 0.50;
 
     @Override
     public int priority() {
-        return 14;
+        return 25;
     }
 
     @Override
     public boolean matches(SpendControlSnapshot s) {
+        if (s == null || s.state() == null) {
+            return false;
+        }
+
+        if (!s.studiedToday()) {
+            return false;
+        }
+
         int events = s.state().eventsCount();
-        int quiz = s.state().quizSubmits();
-        int wrong = s.state().wrongReviews();
-        int wrongDone = s.state().wrongReviewDoneCount();
+        int action = s.state().quizSubmits();
+        int risk = s.state().wrongReviews();
+        int justOpen = s.state().justOpenCount();
 
-        if (events < EVENTS_MIN) {
+        if (events <= 0) {
             return false;
         }
 
-        if (wrongDone <= 0) {
+        if (s.streakDays() < STREAK_MIN) {
             return false;
         }
 
-        double openRatio = events <= 0 ? 0.0 : (double) s.state().justOpenCount() / events;
-        double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
+        if (s.recentEventCount3d() < RECENT_3D_MIN) {
+            return false;
+        }
 
-        boolean noWrongContext = wrong == 0;
-        boolean lowQuizQuality = quizRatio < QUIZ_RATIO_MIN;
-        boolean openHeavy = openRatio > OPEN_RATIO_MAX;
+        if (action < ACTION_MIN) {
+            return false;
+        }
 
-        return noWrongContext && (lowQuizQuality || openHeavy);
+        if (risk > 0) {
+            return false;
+        }
+
+        double openRatio = (double) justOpen / events;
+        return openRatio <= OPEN_RATIO_MAX;
     }
 
     @Override
     public Prediction apply(SpendControlSnapshot s) {
         int events = s.state().eventsCount();
-        int quiz = s.state().quizSubmits();
-        int wrong = s.state().wrongReviews();
-        int wrongDone = s.state().wrongReviewDoneCount();
+        int action = s.state().quizSubmits();
+        int risk = s.state().wrongReviews();
+        int done = s.state().wrongReviewDoneCount();
+        int justOpen = s.state().justOpenCount();
 
-        double openRatio = events <= 0 ? 0.0 : (double) s.state().justOpenCount() / events;
-        double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
+        double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
+        double actionRatio = events <= 0 ? 0.0 : (double) action / events;
 
         return Prediction.of(
-                PredictionLevel.WARNING,
-                PredictionReasonCode.RECOVERY_PROGRESS,
-                "제어 완료 기록이 일부 있지만 실제 소비 제어 흐름으로 보기엔 행동 맥락이 아직 약하다. 제어 행동 1회로 흐름을 확인하자.",
-                Map.of(
-                        "eventsCount", events,
-                        "quizSubmits", quiz,
-                        "wrongReviews", wrong,
-                        "wrongReviewDoneCount", wrongDone,
-                        "openRatio", openRatio,
-                        "quizRatio", quizRatio,
-                        "openRatioMax", OPEN_RATIO_MAX,
-                        "quizRatioMin", QUIZ_RATIO_MIN
+                PredictionLevel.SAFE,
+                PredictionReasonCode.HABIT_STABLE,
+                "소비 제어 루틴이 안정적으로 유지되고 있다.",
+                Map.ofEntries(
+                        entry("streakDays", s.streakDays()),
+                        entry("daysSinceLastEvent", s.daysSinceLastEvent()),
+                        entry("recentEventCount3d", s.recentEventCount3d()),
+                        entry("eventsCount", events),
+                        entry("quizSubmits", action),
+                        entry("wrongReviews", risk),
+                        entry("wrongReviewDoneCount", done),
+                        entry("justOpenCount", justOpen),
+                        entry("studiedToday", s.studiedToday()),
+                        entry("openRatio", openRatio),
+                        entry("actionRatio", actionRatio),
+                        entry("streakMin", STREAK_MIN),
+                        entry("recent3dMin", RECENT_3D_MIN),
+                        entry("actionMin", ACTION_MIN),
+                        entry("openRatioMax", OPEN_RATIO_MAX)
                 )
         );
     }

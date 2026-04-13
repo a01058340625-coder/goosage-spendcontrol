@@ -1,80 +1,30 @@
 package com.goosage.infra.adapter;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Optional;
-
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-import com.goosage.domain.spendcontrol.SpendControlReadPort;
-import com.goosage.domain.spendcontrol.TodayRow;
-import com.goosage.infra.dao.SpendControlReadDao;
+import com.goosage.domain.EventType;
 
 @Component
-public class SpendControlReadDaoAdapter implements SpendControlReadPort {
+public class QuizJdbcAdapter {
 
-    private final SpendControlReadDao dao;
+    private final JdbcTemplate jdbc;
 
-    public SpendControlReadDaoAdapter(SpendControlReadDao dao) {
-        this.dao = dao;
+    public QuizJdbcAdapter(JdbcTemplate jdbc) {
+        this.jdbc = jdbc;
     }
 
-    @Override
-    public Optional<TodayRow> findToday(long userId, LocalDate today) {
-        return dao.findToday(userId)
-                .map(r -> new TodayRow(
-                        r.ymd(),
-                        r.eventsCount(),
-                        r.quizSubmits(),
-                        r.wrongReviews(),
-                        r.wrongReviewDoneCount(),
-                        null
-                ));
-    }
+    public void save(long userId, EventType type, Long knowledgeId) {
+        String sql = """
+            INSERT INTO spendcontrol_events (user_id, event_type, knowledge_id, created_at)
+            VALUES (?, ?, ?, NOW())
+        """;
 
-    @Override
-    public Optional<LocalDateTime> lastEventAtAll(long userId) {
-        return dao.lastEventAtAll(userId);
-    }
-
-    @Override
-    public int recentEventCount3d(long userId, LocalDate today) {
-        return dao.recentEventCount3d(userId, today);
-    }
-
-    @Override
-    public int calcStreakDays(long userId, LocalDate today) {
-        return dao.calcStreakDays(userId, today);
-    }
-
-    @Override
-    public int todayEventCountFromEvents(long userId, LocalDate today) {
-        return dao.todayEventCountFromEvents(userId, today);
-    }
-
-    // 🔥 이름만 바꿔서 매핑
-    @Override
-    public int recentRiskSignal3d(long userId, LocalDate today) {
-        return dao.recentWrong3d(userId, today);
-    }
-
-    @Override
-    public int recentRecoveryAction3d(long userId, LocalDate today) {
-        return dao.recentWrongDone3d(userId, today);
-    }
-
-    @Override
-    public int todayRiskSignalFromEvents(long userId, LocalDate today) {
-        return dao.todayWrongFromEvents(userId, today);
-    }
-
-    @Override
-    public int todayRecoveryActionFromEvents(long userId, LocalDate today) {
-        return dao.todayWrongDoneFromEvents(userId, today);
-    }
-
-    @Override
-    public int todayActionFromEvents(long userId, LocalDate today) {
-        return dao.todayQuizFromEvents(userId, today);
+        jdbc.update(
+                sql,
+                userId,
+                type.name(),
+                knowledgeId
+        );
     }
 }

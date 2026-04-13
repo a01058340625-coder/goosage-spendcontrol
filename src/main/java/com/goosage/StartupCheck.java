@@ -1,4 +1,4 @@
-package com.goosage.spendcontrol;
+package com.goosage;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
