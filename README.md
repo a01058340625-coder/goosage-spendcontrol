@@ -1,107 +1,77 @@
-# GooSage API
+# GooSage SpendControl
 
-Çàµ¿ µ¥ÀÌÅÍ ±â¹İ ÇĞ½À »óÅÂ ÆÇ´Ü ¿£Áø  
-A decision engine that analyzes study behavior and recommends the next action.
+Decision engine for managing impulsive spending behavior.
 
 ---
 
 ## 1. Overview
 
-GooSage API´Â »ç¿ëÀÚÀÇ ÇĞ½À Çàµ¿ µ¥ÀÌÅÍ¸¦ ¼öÁıÇÏ°í,  
-ÇöÀç ÇĞ½À »óÅÂ¸¦ ÆÇ´ÜÇÑ µÚ ´ÙÀ½ Çàµ¿(NextAction)À» ÃßÃµÇÏ´Â ¹é¿£µå ¿£ÁøÀÔ´Ï´Ù.
+GooSage SpendControl applies the GooSage engine to spending behavior.
 
-´Ü¼ø °á°ú°¡ ¾Æ´Ñ ¡°Çàµ¿ Èå¸§¡±À» ±â¹İÀ¸·Î »óÅÂ¸¦ ÇØ¼®ÇÕ´Ï´Ù.
-
----
-
-## 2. Why this project?
-
-±âÁ¸ ÇĞ½À ¾ÛÀº °á°ú¸¸ º¸¿©Áİ´Ï´Ù.  
-GooSage´Â Çàµ¿ µ¥ÀÌÅÍ¸¦ ±â¹İÀ¸·Î ÇöÀç »óÅÂ¸¦ ÆÇ´ÜÇÏ°í,  
-Áö±İ ÇÊ¿äÇÑ ÃÖ¼Ò Çàµ¿À» ÃßÃµÇÏ´Â °ÍÀ» ¸ñÇ¥·Î ÇÕ´Ï´Ù.
+It detects impulse signals, evaluates risk, and recommends control actions.
 
 ---
 
-## 3. Core Features
+## 2. Domain Focus
 
-### Study Event ¼öÁı
-- JUST_OPEN  
-- QUIZ_SUBMIT  
-- REVIEW_WRONG  
-- WRONG_REVIEW_DONE  
+This domain models consumer impulse behavior.
 
-### »óÅÂ ½º³À¼¦ »ı¼º
-- ÃÖ±Ù È°µ¿·®  
-- ¿¬¼Ó ÇĞ½À ÀÏ¼ö  
-- ¿À´ä º¹½À ¼ö  
-- ¸¶Áö¸· ÇĞ½À ÀÌÈÄ ½Ã°£  
-
-### »óÅÂ ÆÇ´Ü (Prediction)
-- SAFE / WARNING / DANGER  
-
-### NextAction ÃßÃµ
-ÇöÀç »óÅÂ¿¡¼­ °¡Àå ÀûÀıÇÑ ´ÙÀ½ Çàµ¿ Á¦¾È
-
-- TODAY_DONE  
-- READ_SUMMARY  
-- JUST_OPEN  
-- REVIEW_WRONG_ONE  
-- RETRY_QUIZ  
+### Event Types
+- SPEND_OPEN
+- ITEM_VIEW
+- PURCHASE_ATTEMPT
+- PURCHASE_CANCEL_DONE
+- IMPULSE_SIGNAL
 
 ---
 
-## 4. Architecture
+## 3. Core Flow
 
-API ¡æ Application ¡æ Domain ¡æ Infra
-
-- Rule ±â¹İ ÆÇ´Ü ±¸Á¶  
-- »óÅÂ Èå¸§ Áß½É ¿£Áø  
+Event â†’ Spend State â†’ Risk Evaluation â†’ Control Action
 
 ---
 
-## 5. Example Output
+## 4. Prediction Goals
 
-```text
-level=WARNING
-reason=REVIEW_WRONG_PENDING
-action=REVIEW_WRONG_ONE
-
-evidence:
-daysSinceLastEvent=0
-recentEventCount3d=6
-streakDays=2
-wrongReviews=3
-quizSubmits=5
-
-```
-
-## 6. Tech Stack
-
-- Java
-- Spring Boot
-- MySQL
-- Docker
-
-## 7. Run
-docker-compose up
-
-¶Ç´Â
-
-./mvnw spring-boot:run
-
-Windows:
-
-mvnw.cmd spring-boot:run
-
-## 8. Goal
-
-Çàµ¿ µ¥ÀÌÅÍ¸¦ ±â¹İÀ¸·Î
-ÇöÀç »óÅÂ¸¦ ÇØ¼®ÇÏ°í ´ÙÀ½ Çàµ¿À» ÃßÃµÇÏ´Â
-Decision Engine ±¸Ãà
-
-## 9. Related
-goosage-scripts (½Ã¹Ä·¹ÀÌ¼Ç)
-video-behavior-lab (¿µ»ó Çàµ¿ ºĞ¼®)
+- detect impulsive behavior patterns
+- identify risky purchase attempts
+- evaluate control effectiveness
+- guide intervention timing
 
 ---
 
+## 5. Next Actions
+
+- PROCESS_IMPULSE_SIGNAL
+- SPEND_CONTROL_CHECK
+- DO_CONTROL_ACTION
+- MINIMUM_CONTACT
+- TODAY_SAFE
+
+---
+
+## 6. Why this matters
+
+Spending behavior is highly reactive and emotional.
+
+This system introduces:
+- structured control logic
+- measurable decision flow
+- consistent intervention strategy
+
+---
+
+## 7. Relation to GooSage
+
+- goosage-api â†’ core engine
+- goosage-spendcontrol â†’ domain extension
+
+Demonstrates how the same engine applies across domains.
+
+---
+
+## 8. Long-Term Goal
+
+- impulse control modeling
+- financial behavior stabilization
+- cross-domain behavioral decision system

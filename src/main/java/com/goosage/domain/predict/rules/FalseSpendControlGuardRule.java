@@ -53,8 +53,18 @@ public class FalseSpendControlGuardRule implements PredictionRule {
         boolean tooLittleAction = actionRatio < ACTION_RATIO_MIN_FOR_SAFE;
         boolean noRecoveryDone = done == 0;
 
+        // 1. 제어가 충분하고 현재 위험이 없으면 guard로 막지 않는다. (126 방어)
+        if (risk == 0 && done >= 3) {
+            return false;
+        }
+
+        // 2. action 1 / done 1 같은 약한 균형형은 과하게 LOW_QUALITY로 보내지 않는다. (123 방어)
+        if (action <= 1 && done >= 1 && risk <= 1) {
+            return false;
+        }
+
         return recentEnough
-                && (stillRiskLeft || tooManyOpenOnly || tooLittleAction || noRecoveryDone);
+                && (stillRiskLeft || tooManyOpenOnly || (tooLittleAction && noRecoveryDone));
     }
 
     @Override

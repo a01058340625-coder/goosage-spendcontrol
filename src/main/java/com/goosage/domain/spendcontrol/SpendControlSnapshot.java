@@ -19,10 +19,15 @@ public record SpendControlSnapshot(
         Long recentKnowledgeId
 ) {
 
-    public double openRatio() {
-        if (state == null || state.eventsCount() <= 0) return 0.0;
-        return (double) state.justOpenCount() / state.eventsCount();
-    }
+	public double openRatio() {
+	    if (state == null) return 0.0;
+
+	    int opens = state.justOpenCount();
+	    int attempts = state.quizSubmits();
+	    int total = opens + attempts;
+
+	    return total <= 0 ? 0.0 : (double) opens / total;
+	}
 
     public double quizRatio() {
         if (state == null || state.eventsCount() <= 0) return 0.0;

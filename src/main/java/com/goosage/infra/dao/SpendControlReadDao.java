@@ -20,17 +20,17 @@ public class SpendControlReadDao {
 
     public Optional<TodayRowRecord> findToday(long userId) {
 
-        String sql =
-                "SELECT " +
-                "  DATE(MAX(created_at)) AS ymd, " +
-                "  COUNT(*) AS events_count, " +
-                "  SUM(CASE WHEN type IN ('ITEM_VIEW', 'PURCHASE_ATTEMPT') THEN 1 ELSE 0 END) AS quiz_submits, " +
-                "  SUM(CASE WHEN type = 'IMPULSE_SIGNAL' THEN 1 ELSE 0 END) AS wrong_reviews, " +
-                "  SUM(CASE WHEN type = 'PURCHASE_CANCEL_DONE' THEN 1 ELSE 0 END) AS wrong_review_done_count " +
-                "FROM spendcontrol_events " +
-                "WHERE user_id = ? " +
-                "  AND DATE(created_at) = CURDATE() " +
-                "HAVING COUNT(*) > 0";
+    	String sql =
+    	        "SELECT " +
+    	        "  DATE(MAX(created_at)) AS ymd, " +
+    	        "  COUNT(*) AS events_count, " +
+    	        "  SUM(CASE WHEN type = 'PURCHASE_ATTEMPT' THEN 1 ELSE 0 END) AS quiz_submits, " +
+    	        "  SUM(CASE WHEN type = 'IMPULSE_SIGNAL' THEN 1 ELSE 0 END) AS wrong_reviews, " +
+    	        "  SUM(CASE WHEN type = 'PURCHASE_CANCEL_DONE' THEN 1 ELSE 0 END) AS wrong_review_done_count " +
+    	        "FROM spendcontrol_events " +
+    	        "WHERE user_id = ? " +
+    	        "  AND DATE(created_at) = CURDATE() " +
+    	        "HAVING COUNT(*) > 0";
 
         try {
             TodayRowRecord row = jdbcTemplate.queryForObject(
@@ -181,7 +181,7 @@ public class SpendControlReadDao {
 
         String sql =
                 "SELECT COUNT(*) FROM spendcontrol_events " +
-                "WHERE user_id = ? AND type IN ('ITEM_VIEW', 'PURCHASE_ATTEMPT') AND created_at >= ? AND created_at < ?";
+                "WHERE user_id = ? AND type = 'PURCHASE_ATTEMPT' AND created_at >= ? AND created_at < ?";
 
         Timestamp from = Timestamp.valueOf(today.atStartOfDay());
         Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());

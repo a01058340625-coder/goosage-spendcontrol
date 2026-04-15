@@ -33,9 +33,27 @@ public class LowQualityOpenRule implements PredictionRule {
         }
 
         int events = s.state().eventsCount();
-
         double openRatio = s.openRatio();
         double quizRatio = s.quizRatio();
+
+        int attempts = s.state().quizSubmits();
+        int blocked = s.state().wrongReviewDoneCount();
+
+        System.out.println(
+                "[LOW_QUALITY_OPEN] events=" + events
+                + ", attempts=" + attempts
+                + ", blocked=" + blocked
+                + ", openRatio=" + openRatio
+                + ", quizRatio=" + quizRatio
+        );
+
+        if (blocked >= 3) {
+            return false;
+        }
+
+        if (attempts <= 1) {
+            return false;
+        }
 
         return events >= EVENTS_MIN
                 && openRatio >= OPEN_RATIO_MIN
@@ -47,15 +65,12 @@ public class LowQualityOpenRule implements PredictionRule {
         return Prediction.of(
                 PredictionLevel.WARNING,
                 PredictionReasonCode.LOW_QUALITY_OPEN,
-                "열기 행동 비중이 너무 높아 실제 학습 품질이 떨어지고 있어. 퀴즈 1개로 흐름을 바로잡자.",
+                "열기 비중이 높고 제어가 부족해. 실제 소비 제어 행동을 1개 추가하자.",
                 Map.of(
                         "openRatio", s.openRatio(),
                         "quizRatio", s.quizRatio(),
                         "eventsCount", s.state().eventsCount(),
-                        "studiedToday", s.studiedToday(),
-                        "eventsMin", EVENTS_MIN,
-                        "openRatioMin", OPEN_RATIO_MIN,
-                        "quizRatioMax", QUIZ_RATIO_MAX
+                        "studiedToday", s.studiedToday()
                 )
         );
     }
