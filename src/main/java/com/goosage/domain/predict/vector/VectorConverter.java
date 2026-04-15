@@ -8,11 +8,15 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 public class VectorConverter {
 
     public ObservationVector from(SpendControlSnapshot s) {
-        double activity = clamp((s.state() != null ? s.state().eventsCount() : 0) / 6.0);
+
+        double activity = clamp((s.state() != null ? s.state().eventsCount() : 0) / 8.0);
+
         double openRatio = s.openRatio();
-        double quizRatio = s.quizRatio();
-        double wrongRatio = s.wrongRatio();
-        double wrongDoneRatio = s.wrongDoneRatio();
+        double viewRatio = s.viewRatio();
+        double attemptRatio = s.attemptRatio();
+        double cancelDoneRatio = s.cancelDoneRatio();
+        double impulseRatio = s.impulseRatio();
+
         double recentScore = clamp(s.recentEventCount3d() / 12.0);
         double streakScore = clamp(s.streakDays() / 7.0);
         double recencyPenalty = clamp(s.daysSinceLastEvent() / 3.0);
@@ -20,9 +24,10 @@ public class VectorConverter {
         return new ObservationVector(
                 activity,
                 openRatio,
-                quizRatio,
-                wrongRatio,
-                wrongDoneRatio,
+                viewRatio,
+                attemptRatio,
+                cancelDoneRatio,
+                impulseRatio,
                 recentScore,
                 streakScore,
                 recencyPenalty

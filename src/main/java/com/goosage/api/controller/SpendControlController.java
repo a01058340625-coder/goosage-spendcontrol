@@ -1,12 +1,12 @@
 package com.goosage.api.controller;
 
+import java.time.LocalDate;
+import java.util.Map;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.goosage.app.SpendControlTodayResult;
-import com.goosage.app.SpendControlTodayService;
-import com.goosage.auth.SessionConst;
-import com.goosage.support.web.ApiResponse;
+import com.goosage.app.spendcontrol.SpendControlTodayService;
 
 import jakarta.servlet.http.HttpSession;
 
@@ -20,13 +20,13 @@ public class SpendControlController {
     }
 
     @GetMapping("/spend/today")
-    public ApiResponse<SpendControlTodayResult> today(HttpSession session) {
-        Long userId = (Long) session.getAttribute(SessionConst.LOGIN_USER_ID);
-        if (userId == null) {
-            return ApiResponse.fail("로그인이 필요합니다");
+    public Map<String, Object> today(HttpSession session) {
+        Object loginUserId = session.getAttribute("LOGIN_USER_ID");
+        if (loginUserId == null) {
+            return Map.of("ok", false, "message", "login required");
         }
 
-        SpendControlTodayResult result = spendControlTodayService.getToday(userId);
-        return ApiResponse.ok(result);
+        long userId = ((Number) loginUserId).longValue();
+        return spendControlTodayService.today(userId, LocalDate.now());
     }
 }

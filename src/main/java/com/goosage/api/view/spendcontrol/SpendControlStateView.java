@@ -9,9 +9,11 @@ public class SpendControlStateView {
     private boolean studiedToday;
     private int streakDays;
     private int eventsCount;
-    private int quizSubmits;
-    private int wrongReviews;
-    private int wrongReviewDoneCount;
+    private int spendOpenCount;
+    private int itemViewCount;
+    private int purchaseAttemptCount;
+    private int purchaseCancelDoneCount;
+    private int impulseSignalCount;
     private LocalDateTime lastEventAt;
     private Long recentKnowledgeId;
 
@@ -20,9 +22,11 @@ public class SpendControlStateView {
             boolean studiedToday,
             int streakDays,
             int eventsCount,
-            int quizSubmits,
-            int wrongReviews,
-            int wrongReviewDoneCount,
+            int spendOpenCount,
+            int itemViewCount,
+            int purchaseAttemptCount,
+            int purchaseCancelDoneCount,
+            int impulseSignalCount,
             LocalDateTime lastEventAt,
             Long recentKnowledgeId
     ) {
@@ -30,20 +34,56 @@ public class SpendControlStateView {
         this.studiedToday = studiedToday;
         this.streakDays = streakDays;
         this.eventsCount = eventsCount;
-        this.quizSubmits = quizSubmits;
-        this.wrongReviews = wrongReviews;
-        this.wrongReviewDoneCount = wrongReviewDoneCount;
+        this.spendOpenCount = spendOpenCount;
+        this.itemViewCount = itemViewCount;
+        this.purchaseAttemptCount = purchaseAttemptCount;
+        this.purchaseCancelDoneCount = purchaseCancelDoneCount;
+        this.impulseSignalCount = impulseSignalCount;
         this.lastEventAt = lastEventAt;
         this.recentKnowledgeId = recentKnowledgeId;
     }
 
-    public LocalDate getYmd() { return ymd; }
-    public boolean isStudiedToday() { return studiedToday; }
-    public int getStreakDays() { return streakDays; }
-    public int getEventsCount() { return eventsCount; }
-    public int getQuizSubmits() { return quizSubmits; }
-    public int getWrongReviews() { return wrongReviews; }
-    public int getWrongReviewDoneCount() { return wrongReviewDoneCount; }
-    public LocalDateTime getLastEventAt() { return lastEventAt; }
-    public Long getRecentKnowledgeId() { return recentKnowledgeId; }
+    public LocalDate getYmd() {
+        return ymd;
+    }
+
+    public boolean isStudiedToday() {
+        return studiedToday;
+    }
+
+    public int getStreakDays() {
+        return streakDays;
+    }
+
+    public int getEventsCount() {
+        return eventsCount;
+    }
+
+    public int getSpendOpenCount() {
+        return spendOpenCount;
+    }
+
+    public int getItemViewCount() {
+        return itemViewCount;
+    }
+
+    public int getPurchaseAttemptCount() {
+        return purchaseAttemptCount;
+    }
+
+    public int getPurchaseCancelDoneCount() {
+        return purchaseCancelDoneCount;
+    }
+
+    public int getImpulseSignalCount() {
+        return impulseSignalCount;
+    }
+
+    public LocalDateTime getLastEventAt() {
+        return lastEventAt;
+    }
+
+    public Long getRecentKnowledgeId() {
+        return recentKnowledgeId;
+    }
 }

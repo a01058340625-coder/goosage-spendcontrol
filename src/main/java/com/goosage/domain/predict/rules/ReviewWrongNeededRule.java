@@ -28,10 +28,10 @@ public class ReviewWrongNeededRule implements PredictionRule {
             return false;
         }
 
-        int risk = s.state().wrongReviews();
-        int recovered = s.state().wrongReviewDoneCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
-        return risk > 0 && recovered == 0;
+        return impulse > 0 && cancelDone == 0;
     }
 
     @Override
@@ -46,9 +46,11 @@ public class ReviewWrongNeededRule implements PredictionRule {
                         "daysSinceLastEvent", s.daysSinceLastEvent(),
                         "recentEventCount3d", s.recentEventCount3d(),
                         "eventsCount", s.state().eventsCount(),
-                        "actionCount", s.state().quizSubmits(),
-                        "riskSignal", s.state().wrongReviews(),
-                        "recoveryAction", s.state().wrongReviewDoneCount()
+                        "spendOpenCount", s.state().spendOpenCount(),
+                        "itemViewCount", s.state().itemViewCount(),
+                        "purchaseAttemptCount", s.state().purchaseAttemptCount(),
+                        "impulseSignalCount", s.state().impulseSignalCount(),
+                        "purchaseCancelDoneCount", s.state().purchaseCancelDoneCount()
                 )
         );
     }

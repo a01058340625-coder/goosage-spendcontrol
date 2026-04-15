@@ -17,8 +17,8 @@ public class HabitStableRule implements PredictionRule {
 
     private static final int STREAK_MIN = 3;
     private static final int RECENT_3D_MIN = 3;
-    private static final int ACTION_MIN = 2;
-    private static final double OPEN_RATIO_MAX = 0.50;
+    private static final int CONTROL_MIN = 2;
+    private static final double PASSIVE_RATIO_MAX = 0.65;
 
     @Override
     public int priority() {
@@ -36,9 +36,9 @@ public class HabitStableRule implements PredictionRule {
         }
 
         int events = s.state().eventsCount();
-        int action = s.state().quizSubmits();
-        int risk = s.state().wrongReviews();
-        int justOpen = s.state().justOpenCount();
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
         if (events <= 0) {
             return false;
@@ -52,28 +52,29 @@ public class HabitStableRule implements PredictionRule {
             return false;
         }
 
-        if (action < ACTION_MIN) {
+        if (cancelDone < CONTROL_MIN) {
             return false;
         }
 
-        if (risk > 0) {
+        if (attempt > 0 || impulse > 0) {
             return false;
         }
 
-        double openRatio = (double) justOpen / events;
-        return openRatio <= OPEN_RATIO_MAX;
+        double passiveRatio = s.openRatio() + s.viewRatio();
+        return passiveRatio <= PASSIVE_RATIO_MAX;
     }
 
     @Override
     public Prediction apply(SpendControlSnapshot s) {
         int events = s.state().eventsCount();
-        int action = s.state().quizSubmits();
-        int risk = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
-        int justOpen = s.state().justOpenCount();
+        int open = s.state().spendOpenCount();
+        int view = s.state().itemViewCount();
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
-        double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
-        double actionRatio = events <= 0 ? 0.0 : (double) action / events;
+        double passiveRatio = s.openRatio() + s.viewRatio();
+        double controlRatio = s.cancelDoneRatio();
 
         return Prediction.of(
                 PredictionLevel.SAFE,
@@ -84,17 +85,18 @@ public class HabitStableRule implements PredictionRule {
                         entry("daysSinceLastEvent", s.daysSinceLastEvent()),
                         entry("recentEventCount3d", s.recentEventCount3d()),
                         entry("eventsCount", events),
-                        entry("quizSubmits", action),
-                        entry("wrongReviews", risk),
-                        entry("wrongReviewDoneCount", done),
-                        entry("justOpenCount", justOpen),
+                        entry("spendOpenCount", open),
+                        entry("itemViewCount", view),
+                        entry("purchaseAttemptCount", attempt),
+                        entry("impulseSignalCount", impulse),
+                        entry("purchaseCancelDoneCount", cancelDone),
                         entry("studiedToday", s.studiedToday()),
-                        entry("openRatio", openRatio),
-                        entry("actionRatio", actionRatio),
+                        entry("passiveRatio", passiveRatio),
+                        entry("controlRatio", controlRatio),
                         entry("streakMin", STREAK_MIN),
                         entry("recent3dMin", RECENT_3D_MIN),
-                        entry("actionMin", ACTION_MIN),
-                        entry("openRatioMax", OPEN_RATIO_MAX)
+                        entry("controlMin", CONTROL_MIN),
+                        entry("passiveRatioMax", PASSIVE_RATIO_MAX)
                 )
         );
     }

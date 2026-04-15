@@ -25,9 +25,11 @@ public class SpendControlReadDaoAdapter implements SpendControlReadPort {
                 .map(r -> new TodayRow(
                         r.ymd(),
                         r.eventsCount(),
-                        r.quizSubmits(),
-                        r.wrongReviews(),
-                        r.wrongReviewDoneCount(),
+                        r.spendOpenCount(),
+                        r.itemViewCount(),
+                        r.purchaseAttemptCount(),
+                        r.purchaseCancelDoneCount(),
+                        r.impulseSignalCount(),
                         null
                 ));
     }
@@ -48,32 +50,37 @@ public class SpendControlReadDaoAdapter implements SpendControlReadPort {
     }
 
     @Override
-    public int todayEventCountFromEvents(long userId, LocalDate today) {
-        return dao.todayEventCountFromEvents(userId, today);
+    public int todaySpendOpenCountFromEvents(long userId, LocalDate today) {
+        return dao.todaySpendOpenCountFromEvents(userId, today);
     }
 
     @Override
-    public int recentRiskSignal3d(long userId, LocalDate today) {
-        return dao.recentWrong3d(userId, today);
+    public int todayItemViewCountFromEvents(long userId, LocalDate today) {
+        return dao.todayItemViewCountFromEvents(userId, today);
     }
 
     @Override
-    public int recentRecoveryAction3d(long userId, LocalDate today) {
-        return dao.recentWrongDone3d(userId, today);
+    public int todayPurchaseAttemptCountFromEvents(long userId, LocalDate today) {
+        return dao.todayPurchaseAttemptCountFromEvents(userId, today);
     }
 
     @Override
-    public int todayRiskSignalFromEvents(long userId, LocalDate today) {
-        return dao.todayWrongFromEvents(userId, today);
+    public int todayPurchaseCancelDoneCountFromEvents(long userId, LocalDate today) {
+        return dao.todayPurchaseCancelDoneCountFromEvents(userId, today);
     }
 
     @Override
-    public int todayRecoveryActionFromEvents(long userId, LocalDate today) {
-        return dao.todayWrongDoneFromEvents(userId, today);
+    public int todayImpulseSignalCountFromEvents(long userId, LocalDate today) {
+        return dao.todayImpulseSignalCountFromEvents(userId, today);
     }
 
     @Override
-    public int todayActionFromEvents(long userId, LocalDate today) {
-        return dao.todayQuizFromEvents(userId, today);
+    public int recentImpulseSignalCount3d(long userId, LocalDate today) {
+        return dao.recentImpulseSignalCount3d(userId, today);
+    }
+
+    @Override
+    public int recentPurchaseCancelDoneCount3d(long userId, LocalDate today) {
+        return dao.recentPurchaseCancelDoneCount3d(userId, today);
     }
 }

@@ -24,36 +24,34 @@ public class SpendControlProgressRule implements PredictionRule {
             return false;
         }
 
-        int impulse = s.state().wrongReviews();
-        int attempts = s.state().quizSubmits();
-        int blocked = s.state().wrongReviewDoneCount();
+        int impulse = s.state().impulseSignalCount();
+        int attempts = s.state().purchaseAttemptCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
         int events = s.state().eventsCount();
 
-        // 제어 행동이 없으면 progress 아님
-        if (blocked <= 0) {
+        if (cancelDone <= 0) {
             return false;
         }
 
-        // 이미 안전권으로 볼 수 있는 경우 progress로 잡지 않음
-        if (impulse == 0 && attempts <= 1 && blocked >= 4 && events >= 5) {
+        if (impulse == 0 && attempts <= 1 && cancelDone >= 4 && events >= 5) {
             return false;
         }
 
-        // 약한 균형형(123 같은 케이스)은 progress 과매칭 방지
-        if (attempts <= 1 && blocked <= 1) {
+        if (attempts <= 1 && cancelDone <= 1) {
             return false;
         }
 
-        // 실제 소비 시도 흐름이 있어야 progress로 본다
-        return attempts >= 2;
+        return attempts >= 2 || impulse >= 1;
     }
 
     @Override
     public Prediction apply(SpendControlSnapshot s) {
         int events = s.state() != null ? s.state().eventsCount() : 0;
-        int impulse = s.state() != null ? s.state().wrongReviews() : 0;
-        int attempts = s.state() != null ? s.state().quizSubmits() : 0;
-        int blocked = s.state() != null ? s.state().wrongReviewDoneCount() : 0;
+        int open = s.state() != null ? s.state().spendOpenCount() : 0;
+        int view = s.state() != null ? s.state().itemViewCount() : 0;
+        int impulse = s.state() != null ? s.state().impulseSignalCount() : 0;
+        int attempts = s.state() != null ? s.state().purchaseAttemptCount() : 0;
+        int cancelDone = s.state() != null ? s.state().purchaseCancelDoneCount() : 0;
 
         return Prediction.of(
                 PredictionLevel.WARNING,
@@ -64,9 +62,11 @@ public class SpendControlProgressRule implements PredictionRule {
                         "daysSinceLastEvent", s.daysSinceLastEvent(),
                         "recentEventCount3d", s.recentEventCount3d(),
                         "eventsCount", events,
-                        "wrongReviews", impulse,
-                        "quizSubmits", attempts,
-                        "wrongReviewDoneCount", blocked
+                        "spendOpenCount", open,
+                        "itemViewCount", view,
+                        "impulseSignalCount", impulse,
+                        "purchaseAttemptCount", attempts,
+                        "purchaseCancelDoneCount", cancelDone
                 )
         );
     }

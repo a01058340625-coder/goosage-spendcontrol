@@ -16,8 +16,8 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 public class FalseSpendControlGuardRule implements PredictionRule {
 
     private static final int RECENT_3D_MIN = 3;
-    private static final double OPEN_RATIO_MAX_FOR_SAFE = 0.60;
-    private static final double ACTION_RATIO_MIN_FOR_SAFE = 0.20;
+    private static final double PASSIVE_RATIO_MAX_FOR_SAFE = 0.75;
+    private static final double ATTEMPT_RATIO_MIN_FOR_SAFE = 0.20;
 
     @Override
     public int priority() {
@@ -35,48 +35,50 @@ public class FalseSpendControlGuardRule implements PredictionRule {
         }
 
         int events = s.state().eventsCount();
-        int action = s.state().quizSubmits();
-        int risk = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
-        int justOpen = s.state().justOpenCount();
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
         if (events <= 0) {
             return false;
         }
 
-        double openRatio = (double) justOpen / events;
-        double actionRatio = (double) action / events;
+        double passiveRatio = s.openRatio() + s.viewRatio();
+        double attemptRatio = s.attemptRatio();
 
         boolean recentEnough = s.recentEventCount3d() >= RECENT_3D_MIN;
-        boolean stillRiskLeft = risk > 0;
-        boolean tooManyOpenOnly = openRatio > OPEN_RATIO_MAX_FOR_SAFE;
-        boolean tooLittleAction = actionRatio < ACTION_RATIO_MIN_FOR_SAFE;
-        boolean noRecoveryDone = done == 0;
+        boolean stillRiskLeft = impulse > 0;
+        boolean tooManyPassive = passiveRatio > PASSIVE_RATIO_MAX_FOR_SAFE;
+        boolean tooLittleAttempt = attemptRatio < ATTEMPT_RATIO_MIN_FOR_SAFE;
+        boolean noControlDone = cancelDone == 0;
 
-        // 1. 제어가 충분하고 현재 위험이 없으면 guard로 막지 않는다. (126 방어)
-        if (risk == 0 && done >= 3) {
+        if (impulse == 0 && attempt == 0 && cancelDone == 0) {
             return false;
         }
 
-        // 2. action 1 / done 1 같은 약한 균형형은 과하게 LOW_QUALITY로 보내지 않는다. (123 방어)
-        if (action <= 1 && done >= 1 && risk <= 1) {
+        if (impulse == 0 && cancelDone >= 3) {
+            return false;
+        }
+
+        if (attempt <= 1 && cancelDone >= 1 && impulse <= 1) {
             return false;
         }
 
         return recentEnough
-                && (stillRiskLeft || tooManyOpenOnly || (tooLittleAction && noRecoveryDone));
+                && (stillRiskLeft || tooManyPassive || (tooLittleAttempt && noControlDone));
     }
 
     @Override
     public Prediction apply(SpendControlSnapshot s) {
         int events = s.state().eventsCount();
-        int action = s.state().quizSubmits();
-        int risk = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
-        int justOpen = s.state().justOpenCount();
+        int open = s.state().spendOpenCount();
+        int view = s.state().itemViewCount();
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
-        double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
-        double actionRatio = events <= 0 ? 0.0 : (double) action / events;
+        double passiveRatio = s.openRatio() + s.viewRatio();
+        double attemptRatio = s.attemptRatio();
 
         return Prediction.of(
                 PredictionLevel.WARNING,
@@ -87,15 +89,16 @@ public class FalseSpendControlGuardRule implements PredictionRule {
                         entry("daysSinceLastEvent", s.daysSinceLastEvent()),
                         entry("recentEventCount3d", s.recentEventCount3d()),
                         entry("eventsCount", events),
-                        entry("quizSubmits", action),
-                        entry("wrongReviews", risk),
-                        entry("wrongReviewDoneCount", done),
-                        entry("justOpenCount", justOpen),
+                        entry("spendOpenCount", open),
+                        entry("itemViewCount", view),
+                        entry("purchaseAttemptCount", attempt),
+                        entry("impulseSignalCount", impulse),
+                        entry("purchaseCancelDoneCount", cancelDone),
                         entry("studiedToday", s.studiedToday()),
-                        entry("openRatio", openRatio),
-                        entry("actionRatio", actionRatio),
-                        entry("openRatioMaxForSafe", OPEN_RATIO_MAX_FOR_SAFE),
-                        entry("actionRatioMinForSafe", ACTION_RATIO_MIN_FOR_SAFE)
+                        entry("passiveRatio", passiveRatio),
+                        entry("attemptRatio", attemptRatio),
+                        entry("passiveRatioMaxForSafe", PASSIVE_RATIO_MAX_FOR_SAFE),
+                        entry("attemptRatioMinForSafe", ATTEMPT_RATIO_MIN_FOR_SAFE)
                 )
         );
     }

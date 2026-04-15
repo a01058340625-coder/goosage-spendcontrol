@@ -11,14 +11,14 @@ import com.goosage.domain.predict.PredictionRule;
 import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 
 @Component
-public class UrgeHighRule implements PredictionRule {
+public class AttemptChainRiskRule implements PredictionRule {
 
-    private static final int IMPULSE_MIN = 2;
-    private static final int RECENT_3D_MIN = 4;
+    private static final int ATTEMPT_MIN = 3;
+    private static final double ATTEMPT_RATIO_MIN = 0.50;
 
     @Override
     public int priority() {
-        return 8;
+        return 9;
     }
 
     @Override
@@ -31,26 +31,29 @@ public class UrgeHighRule implements PredictionRule {
             return false;
         }
 
-        int impulse = s.state().impulseSignalCount();
+        int attempt = s.state().purchaseAttemptCount();
         int cancelDone = s.state().purchaseCancelDoneCount();
+        int impulse = s.state().impulseSignalCount();
 
-        return impulse >= IMPULSE_MIN
+        return attempt >= ATTEMPT_MIN
+                && s.attemptRatio() >= ATTEMPT_RATIO_MIN
                 && cancelDone == 0
-                && s.recentEventCount3d() >= RECENT_3D_MIN;
+                && impulse == 0;
     }
 
     @Override
     public Prediction apply(SpendControlSnapshot s) {
         return Prediction.of(
-                PredictionLevel.WARNING,
-                PredictionReasonCode.URGE_HIGH,
-                "소비 충동 강도가 높아지고 있다. 구매 전에 제어 행동 1회를 먼저 실행하자.",
+                PredictionLevel.DANGER,
+                PredictionReasonCode.RELAPSE_RISK,
+                "소비 시도가 연속적으로 발생하고 있어. 즉시 제어 행동으로 전환하자.",
                 Map.of(
-                        "impulseSignalCount", s.state().impulseSignalCount(),
-                        "purchaseCancelDoneCount", s.state().purchaseCancelDoneCount(),
                         "purchaseAttemptCount", s.state().purchaseAttemptCount(),
-                        "recentEventCount3d", s.recentEventCount3d(),
-                        "daysSinceLastEvent", s.daysSinceLastEvent()
+                        "purchaseCancelDoneCount", s.state().purchaseCancelDoneCount(),
+                        "impulseSignalCount", s.state().impulseSignalCount(),
+                        "attemptRatio", s.attemptRatio(),
+                        "eventsCount", s.state().eventsCount(),
+                        "recentEventCount3d", s.recentEventCount3d()
                 )
         );
     }

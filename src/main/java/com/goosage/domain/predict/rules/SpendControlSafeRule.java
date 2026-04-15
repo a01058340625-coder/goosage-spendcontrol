@@ -16,15 +16,14 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 public class SpendControlSafeRule implements PredictionRule {
 
     private static final int EVENTS_MIN = 5;
-    private static final int WRONG_DONE_MIN = 2;
-    private static final int QUIZ_MIN = 2;
+    private static final int CANCEL_DONE_MIN = 2;
     private static final int RECENT_3D_MIN = 3;
-    private static final double OPEN_RATIO_MAX = 0.55;
-    private static final double QUIZ_RATIO_MIN = 0.25;
+    private static final double PASSIVE_RATIO_MAX = 0.70;
+    private static final double CANCEL_RATIO_MIN = 0.20;
 
     @Override
     public int priority() {
-        return 15;
+        return 16;
     }
 
     @Override
@@ -38,24 +37,15 @@ public class SpendControlSafeRule implements PredictionRule {
         }
 
         int events = s.state().eventsCount();
-        int quiz = s.state().quizSubmits();
-        int wrong = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
-        int justOpen = s.state().justOpenCount();
-
-        if (wrong != 0) {
-            return false;
-        }
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
         if (events < EVENTS_MIN) {
             return false;
         }
 
-        if (done < WRONG_DONE_MIN) {
-            return false;
-        }
-
-        if (quiz < QUIZ_MIN) {
+        if (cancelDone < CANCEL_DONE_MIN) {
             return false;
         }
 
@@ -63,20 +53,23 @@ public class SpendControlSafeRule implements PredictionRule {
             return false;
         }
 
-        // spendcontrol에서는 quizSubmits 안에 PURCHASE_ATTEMPT가 섞여 있으므로
-        // attempt-heavy 구간은 SAFE로 보내면 안 된다.
-        if (quiz >= 3 && done < quiz) {
+        if (impulse > 0) {
             return false;
         }
 
-        double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
-        double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
-
-        if (openRatio > OPEN_RATIO_MAX) {
+        // attempt가 남아 있는데 cancel이 덮지 못하면 safe 아님
+        if (attempt > 0 && cancelDone < attempt) {
             return false;
         }
 
-        if (quizRatio < QUIZ_RATIO_MIN) {
+        double passiveRatio = s.openRatio() + s.viewRatio();
+        double cancelRatio = s.cancelDoneRatio();
+
+        if (passiveRatio > PASSIVE_RATIO_MAX) {
+            return false;
+        }
+
+        if (cancelRatio < CANCEL_RATIO_MIN) {
             return false;
         }
 
@@ -86,33 +79,36 @@ public class SpendControlSafeRule implements PredictionRule {
     @Override
     public Prediction apply(SpendControlSnapshot s) {
         int events = s.state().eventsCount();
-        int quiz = s.state().quizSubmits();
-        int wrong = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
-        int justOpen = s.state().justOpenCount();
+        int open = s.state().spendOpenCount();
+        int view = s.state().itemViewCount();
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
-        double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
-        double quizRatio = events <= 0 ? 0.0 : (double) quiz / events;
+        double passiveRatio = s.openRatio() + s.viewRatio();
+        double cancelRatio = s.cancelDoneRatio();
 
         return Prediction.of(
                 PredictionLevel.SAFE,
                 PredictionReasonCode.RECOVERY_SAFE,
-                "제어 완료와 행동 흐름이 함께 유지되어 소비 제어 안정권에 들어왔다.",
+                "소비 시도와 충동 신호가 제어 완료 흐름으로 안정화되었다.",
                 Map.ofEntries(
                         entry("streakDays", s.streakDays()),
                         entry("daysSinceLastEvent", s.daysSinceLastEvent()),
                         entry("recentEventCount3d", s.recentEventCount3d()),
                         entry("eventsCount", events),
-                        entry("quizSubmits", quiz),
-                        entry("wrongReviews", wrong),
-                        entry("wrongReviewDoneCount", done),
+                        entry("spendOpenCount", open),
+                        entry("itemViewCount", view),
+                        entry("purchaseAttemptCount", attempt),
+                        entry("purchaseCancelDoneCount", cancelDone),
+                        entry("impulseSignalCount", impulse),
                         entry("studiedToday", s.studiedToday()),
-                        entry("quizMin", QUIZ_MIN),
-                        entry("wrongDoneMin", WRONG_DONE_MIN),
-                        entry("quizRatio", quizRatio),
-                        entry("openRatio", openRatio),
-                        entry("quizRatioMin", QUIZ_RATIO_MIN),
-                        entry("openRatioMax", OPEN_RATIO_MAX)
+                        entry("eventsMin", EVENTS_MIN),
+                        entry("cancelDoneMin", CANCEL_DONE_MIN),
+                        entry("cancelRatio", cancelRatio),
+                        entry("cancelRatioMin", CANCEL_RATIO_MIN),
+                        entry("passiveRatio", passiveRatio),
+                        entry("passiveRatioMax", PASSIVE_RATIO_MAX)
                 )
         );
     }

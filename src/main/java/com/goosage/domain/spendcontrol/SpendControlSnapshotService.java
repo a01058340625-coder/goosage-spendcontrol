@@ -21,25 +21,43 @@ public class SpendControlSnapshotService {
         LocalDateTime lastEventAtAll = readPort.lastEventAtAll(userId).orElse(null);
         int streakDays = readPort.calcStreakDays(userId, nowDate);
 
-        int events = readPort.todayEventCountFromEvents(userId, nowDate);
-        int quiz = readPort.todayActionFromEvents(userId, nowDate);
-        int wrong = readPort.todayRiskSignalFromEvents(userId, nowDate);
-        int wrongDone = readPort.todayRecoveryActionFromEvents(userId, nowDate);
+        int spendOpenCount = readPort.todaySpendOpenCountFromEvents(userId, nowDate);
+        int itemViewCount = readPort.todayItemViewCountFromEvents(userId, nowDate);
+        int purchaseAttemptCount = readPort.todayPurchaseAttemptCountFromEvents(userId, nowDate);
+        int purchaseCancelDoneCount = readPort.todayPurchaseCancelDoneCountFromEvents(userId, nowDate);
+        int impulseSignalCount = readPort.todayImpulseSignalCountFromEvents(userId, nowDate);
+
+        int eventsCount = spendOpenCount
+                + itemViewCount
+                + purchaseAttemptCount
+                + purchaseCancelDoneCount
+                + impulseSignalCount;
 
         System.out.println("[SNAPSHOT-SVC] user=" + userId
-                + " events=" + events
-                + " quiz=" + quiz
-                + " wrong=" + wrong
-                + " wrongDone=" + wrongDone);
+                + " events=" + eventsCount
+                + " open=" + spendOpenCount
+                + " view=" + itemViewCount
+                + " attempt=" + purchaseAttemptCount
+                + " cancelDone=" + purchaseCancelDoneCount
+                + " impulse=" + impulseSignalCount);
 
         Long recentKnowledgeId = null;
-        boolean studiedToday = events > 0;
+        boolean studiedToday = eventsCount > 0;
+
         if (opt.isPresent()) {
             var a = opt.get();
             recentKnowledgeId = a.recentKnowledgeId();
         }
 
-        SpendControlState state = new SpendControlState(wrong, quiz, events, wrongDone);
+        SpendControlState state = new SpendControlState(
+                spendOpenCount,
+                itemViewCount,
+                purchaseAttemptCount,
+                purchaseCancelDoneCount,
+                impulseSignalCount,
+                eventsCount
+        );
+
         int daysSinceLast = calcDaysSinceLastEvent(lastEventAtAll, nowDateTime);
         int recent3d = readPort.recentEventCount3d(userId, nowDate);
 
@@ -56,7 +74,9 @@ public class SpendControlSnapshotService {
     }
 
     private int calcDaysSinceLastEvent(LocalDateTime lastEventAt, LocalDateTime now) {
-        if (lastEventAt == null) return 999;
+        if (lastEventAt == null) {
+            return 999;
+        }
         return (int) java.time.temporal.ChronoUnit.DAYS.between(
                 lastEventAt.toLocalDate(),
                 now.toLocalDate()

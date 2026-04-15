@@ -1,5 +1,7 @@
 package com.goosage.domain.predict.rules;
 
+import static java.util.Map.entry;
+
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -13,39 +15,37 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 @Component
 public class ControlGoodProgressRule implements PredictionRule {
 
-    private static final int DONE_MIN = 2;
+    private static final int CANCEL_DONE_MIN = 2;
     private static final int RECENT_3D_MIN = 3;
 
     @Override
     public int priority() {
-        return 22;
+        return 14;
     }
 
     @Override
     public boolean matches(SpendControlSnapshot s) {
-        if (s == null || s.state() == null) return false;
-        if (!s.studiedToday()) return false;
-
-        int wrong = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
-        int quiz = s.state().quizSubmits();
-
-        // 기본 회복 흐름 조건
-        if (done < DONE_MIN) {
+        if (s == null || s.state() == null) {
             return false;
         }
 
-        if (done < wrong) {
+        if (!s.studiedToday()) {
+            return false;
+        }
+
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
+
+        if (cancelDone < CANCEL_DONE_MIN) {
+            return false;
+        }
+
+        if (cancelDone < (attempt + impulse)) {
             return false;
         }
 
         if (s.recentEventCount3d() < RECENT_3D_MIN) {
-            return false;
-        }
-
-        // spendcontrol에서는 quizSubmits 안에 PURCHASE_ATTEMPT가 섞여 있으므로
-        // 시도(quiz)가 제어(done)보다 많으면 GOOD_PROGRESS로 보내면 안 된다.
-        if (quiz >= 3 && done < quiz) {
             return false;
         }
 
@@ -57,14 +57,20 @@ public class ControlGoodProgressRule implements PredictionRule {
         return Prediction.of(
                 PredictionLevel.SAFE,
                 PredictionReasonCode.GOOD_PROGRESS,
-                "충동을 제어하는 흐름이 잘 유지되고 있다. 지금 리듬을 계속 이어가자.",
-                Map.of(
-                        "riskSignal", s.state().wrongReviews(),
-                        "recoveryAction", s.state().wrongReviewDoneCount(),
-                        "quizSubmits", s.state().quizSubmits(),
-                        "recentEventCount3d", s.recentEventCount3d(),
-                        "streakDays", s.streakDays(),
-                        "daysSinceLastEvent", s.daysSinceLastEvent()
+                "충동과 소비 시도를 제어 완료 흐름이 안정적으로 덮고 있다.",
+                Map.ofEntries(
+                        entry("spendOpenCount", s.state().spendOpenCount()),
+                        entry("itemViewCount", s.state().itemViewCount()),
+                        entry("purchaseAttemptCount", s.state().purchaseAttemptCount()),
+                        entry("impulseSignalCount", s.state().impulseSignalCount()),
+                        entry("purchaseCancelDoneCount", s.state().purchaseCancelDoneCount()),
+                        entry("eventsCount", s.state().eventsCount()),
+                        entry("cancelDoneRatio", s.cancelDoneRatio()),
+                        entry("attemptRatio", s.attemptRatio()),
+                        entry("impulseRatio", s.impulseRatio()),
+                        entry("recentEventCount3d", s.recentEventCount3d()),
+                        entry("streakDays", s.streakDays()),
+                        entry("daysSinceLastEvent", s.daysSinceLastEvent())
                 )
         );
     }

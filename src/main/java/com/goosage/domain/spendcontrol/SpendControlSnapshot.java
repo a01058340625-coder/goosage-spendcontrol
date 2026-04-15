@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * SpendControlSnapshot = SSOT(단일 진실)
+ * SpendControlSnapshot = SSOT
  * - Coach / Prediction / NextAction이 참고하는 읽기 전용 스냅샷
  * - Rule / Engine / Controller는 DB를 직접 보지 않고 Snapshot만 본다.
  */
@@ -19,40 +19,65 @@ public record SpendControlSnapshot(
         Long recentKnowledgeId
 ) {
 
-	public double openRatio() {
-	    if (state == null) return 0.0;
-
-	    int opens = state.justOpenCount();
-	    int attempts = state.quizSubmits();
-	    int total = opens + attempts;
-
-	    return total <= 0 ? 0.0 : (double) opens / total;
-	}
-
-    public double quizRatio() {
-        if (state == null || state.eventsCount() <= 0) return 0.0;
-        return (double) state.quizSubmits() / state.eventsCount();
+    public SpendControlSnapshot {
+        if (state == null) {
+            state = SpendControlState.empty();
+        }
     }
 
-    public double wrongRatio() {
-        if (state == null || state.eventsCount() <= 0) return 0.0;
-        return (double) state.wrongReviews() / state.eventsCount();
+    public double openRatio() {
+        return ratio(state.spendOpenCount(), state.eventsCount());
     }
 
-    public double wrongDoneRatio() {
-        if (state == null || state.eventsCount() <= 0) return 0.0;
-        return (double) state.wrongReviewDoneCount() / state.eventsCount();
+    public double viewRatio() {
+        return ratio(state.itemViewCount(), state.eventsCount());
+    }
+
+    public double attemptRatio() {
+        return ratio(state.purchaseAttemptCount(), state.eventsCount());
+    }
+
+    public double cancelDoneRatio() {
+        return ratio(state.purchaseCancelDoneCount(), state.eventsCount());
+    }
+
+    public double impulseRatio() {
+        return ratio(state.impulseSignalCount(), state.eventsCount());
+    }
+
+    public double defensiveSuccessRatio() {
+        int riskBase = state.purchaseAttemptCount() + state.impulseSignalCount();
+        if (riskBase <= 0) {
+            return state.purchaseCancelDoneCount() > 0 ? 1.0 : 0.0;
+        }
+        return (double) state.purchaseCancelDoneCount() / riskBase;
     }
 
     public boolean hasRiskSignal() {
-        return state != null && state.wrongReviews() > 0;
+        return state.purchaseAttemptCount() > 0 || state.impulseSignalCount() > 0;
     }
 
     public boolean hasControlProgress() {
-        return state != null && state.wrongReviewDoneCount() > 0;
+        return state.purchaseCancelDoneCount() > 0;
     }
 
     public boolean isControlSafe() {
-        return state != null && state.wrongReviewDoneCount() > state.wrongReviews();
+        return state.purchaseCancelDoneCount() >= (state.purchaseAttemptCount() + state.impulseSignalCount())
+                && (state.purchaseAttemptCount() + state.impulseSignalCount()) > 0;
+    }
+
+    public int controlGap() {
+        return state.controlGap();
+    }
+
+    public boolean isBlankState() {
+        return state.isBlank();
+    }
+
+    private double ratio(int value, int total) {
+        if (total <= 0) {
+            return 0.0;
+        }
+        return (double) value / total;
     }
 }

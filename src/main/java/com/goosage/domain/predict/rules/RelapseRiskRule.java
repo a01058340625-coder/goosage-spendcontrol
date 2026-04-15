@@ -1,5 +1,7 @@
 package com.goosage.domain.predict.rules;
 
+import static java.util.Map.entry;
+
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -13,9 +15,9 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 @Component
 public class RelapseRiskRule implements PredictionRule {
 
-    private static final int ACTION_MIN = 3;
-    private static final int RISK_MIN = 1;
-    private static final double OPEN_RATIO_MAX = 0.50;
+    private static final int ATTEMPT_MIN = 3;
+    private static final int IMPULSE_MIN = 1;
+    private static final double PASSIVE_RATIO_MAX = 0.60;
 
     @Override
     public int priority() {
@@ -24,47 +26,47 @@ public class RelapseRiskRule implements PredictionRule {
 
     @Override
     public boolean matches(SpendControlSnapshot s) {
-        if (s == null || s.state() == null) return false;
-        if (!s.studiedToday()) return false;
+        if (s == null || s.state() == null) {
+            return false;
+        }
 
-        int events = s.state().eventsCount();
-        int actions = s.state().quizSubmits();
-        int risk = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
-        int justOpen = s.state().justOpenCount();
+        if (!s.studiedToday()) {
+            return false;
+        }
 
-        double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
+        double passiveRatio = s.openRatio() + s.viewRatio();
 
-        boolean actionHeavy = actions >= ACTION_MIN;
-        boolean riskExists = risk >= RISK_MIN;
-        boolean controlWeak = done < risk;
-        boolean notJustBrowsing = openRatio <= OPEN_RATIO_MAX;
+        boolean attemptHeavy = attempt >= ATTEMPT_MIN;
+        boolean impulseExists = impulse >= IMPULSE_MIN;
+        boolean controlWeak = cancelDone < (attempt + impulse);
+        boolean notJustBrowsing = passiveRatio <= PASSIVE_RATIO_MAX;
 
-        return actionHeavy && riskExists && controlWeak && notJustBrowsing;
+        return attemptHeavy && impulseExists && controlWeak && notJustBrowsing;
     }
 
     @Override
     public Prediction apply(SpendControlSnapshot s) {
-        int events = s.state().eventsCount();
-        int actions = s.state().quizSubmits();
-        int risk = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
-        int justOpen = s.state().justOpenCount();
-
-        double openRatio = events <= 0 ? 0.0 : (double) justOpen / events;
-        double quizRatio = events <= 0 ? 0.0 : (double) actions / events;
-
         return Prediction.of(
                 PredictionLevel.DANGER,
                 PredictionReasonCode.RELAPSE_RISK,
                 "실제 소비 재발 위험 구간이다. 소비 흐름을 끊고 제어 행동으로 바로 전환하자.",
-                Map.of(
-                        "actionCount", actions,
-                        "riskSignal", risk,
-                        "recoveryAction", done,
-                        "openRatio", openRatio,
-                        "quizRatio", quizRatio,
-                        "recentEventCount3d", s.recentEventCount3d()
+                Map.ofEntries(
+                        entry("eventsCount", s.state().eventsCount()),
+                        entry("spendOpenCount", s.state().spendOpenCount()),
+                        entry("itemViewCount", s.state().itemViewCount()),
+                        entry("purchaseAttemptCount", s.state().purchaseAttemptCount()),
+                        entry("impulseSignalCount", s.state().impulseSignalCount()),
+                        entry("purchaseCancelDoneCount", s.state().purchaseCancelDoneCount()),
+                        entry("attemptRatio", s.attemptRatio()),
+                        entry("impulseRatio", s.impulseRatio()),
+                        entry("cancelDoneRatio", s.cancelDoneRatio()),
+                        entry("passiveRatio", s.openRatio() + s.viewRatio()),
+                        entry("recentEventCount3d", s.recentEventCount3d()),
+                        entry("streakDays", s.streakDays()),
+                        entry("daysSinceLastEvent", s.daysSinceLastEvent())
                 )
         );
     }

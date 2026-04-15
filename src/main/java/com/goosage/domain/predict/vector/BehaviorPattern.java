@@ -2,7 +2,7 @@ package com.goosage.domain.predict.vector;
 
 public enum BehaviorPattern {
     LOW_ACTIVITY,
-    QUIZ_ONLY,
+    LOW_QUALITY_OPEN,
     WRONG_HEAVY,
     RECOVERY_PROGRESS,
     HABIT_STABLE

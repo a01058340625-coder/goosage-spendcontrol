@@ -44,18 +44,21 @@ public class PredictionEngine {
                 + ", recentEventCount3d=" + s.recentEventCount3d()
                 + ", daysSinceLastEvent=" + s.daysSinceLastEvent()
                 + ", eventsCount=" + (s.state() != null ? s.state().eventsCount() : -1)
-                + ", quizSubmits=" + (s.state() != null ? s.state().quizSubmits() : -1)
-                + ", wrongReviews=" + (s.state() != null ? s.state().wrongReviews() : -1)
-                + ", wrongReviewDoneCount=" + (s.state() != null ? s.state().wrongReviewDoneCount() : -1));
+                + ", spendOpenCount=" + (s.state() != null ? s.state().spendOpenCount() : -1)
+                + ", itemViewCount=" + (s.state() != null ? s.state().itemViewCount() : -1)
+                + ", purchaseAttemptCount=" + (s.state() != null ? s.state().purchaseAttemptCount() : -1)
+                + ", purchaseCancelDoneCount=" + (s.state() != null ? s.state().purchaseCancelDoneCount() : -1)
+                + ", impulseSignalCount=" + (s.state() != null ? s.state().impulseSignalCount() : -1));
 
         ObservationVector vector = vectorConverter.from(s);
         BehaviorPattern pattern = vectorMatcher.match(vector);
 
         System.out.println("[VECTOR] activity=" + vector.activity()
                 + ", openRatio=" + vector.openRatio()
-                + ", quizRatio=" + vector.quizRatio()
-                + ", wrongRatio=" + vector.wrongRatio()
-                + ", wrongDoneRatio=" + vector.wrongDoneRatio()
+                + ", viewRatio=" + vector.viewRatio()
+                + ", attemptRatio=" + vector.attemptRatio()
+                + ", cancelDoneRatio=" + vector.cancelDoneRatio()
+                + ", impulseRatio=" + vector.impulseRatio()
                 + ", recentScore=" + vector.recentScore()
                 + ", streakScore=" + vector.streakScore()
                 + ", recencyPenalty=" + vector.recencyPenalty());

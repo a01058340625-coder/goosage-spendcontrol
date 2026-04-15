@@ -13,6 +13,11 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 @Component
 public class GoodProgressRule implements PredictionRule {
 
+    private static final int EVENTS_MIN = 5;
+    private static final int CANCEL_DONE_MIN = 2;
+    private static final double CANCEL_RATIO_MIN = 0.30;
+    private static final double PASSIVE_RATIO_MAX = 0.70;
+
     @Override
     public int priority() {
         return 60;
@@ -29,25 +34,32 @@ public class GoodProgressRule implements PredictionRule {
         }
 
         int events = s.state().eventsCount();
-        int quiz = s.state().quizSubmits();
-        int wrong = s.state().wrongReviews();
-        int done = s.state().wrongReviewDoneCount();
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
-        if (events < 5) {
+        if (events < EVENTS_MIN) {
             return false;
         }
 
-        if (wrong != 0) {
+        if (cancelDone < CANCEL_DONE_MIN) {
             return false;
         }
 
-        if (s.quizRatio() < 0.5) {
+        if (impulse > 0) {
             return false;
         }
 
-        // spendcontrol에서는 quizSubmits 안에 PURCHASE_ATTEMPT가 섞여 있으므로
-        // 시도보다 제어가 부족한 상태는 GOOD_PROGRESS로 보내면 안 된다.
-        if (quiz >= 3 && done < quiz) {
+        if (cancelDone < attempt) {
+            return false;
+        }
+
+        if (s.cancelDoneRatio() < CANCEL_RATIO_MIN) {
+            return false;
+        }
+
+        double passiveRatio = s.openRatio() + s.viewRatio();
+        if (passiveRatio > PASSIVE_RATIO_MAX) {
             return false;
         }
 
@@ -61,11 +73,16 @@ public class GoodProgressRule implements PredictionRule {
                 PredictionReasonCode.GOOD_PROGRESS,
                 "소비 제어 흐름이 안정적으로 진행 중이다. 지금 패턴을 유지하자.",
                 Map.of(
-                        "quizRatio", s.quizRatio(),
                         "eventsCount", s.state().eventsCount(),
-                        "quizSubmits", s.state().quizSubmits(),
-                        "wrongReviews", s.state().wrongReviews(),
-                        "wrongReviewDoneCount", s.state().wrongReviewDoneCount()
+                        "spendOpenCount", s.state().spendOpenCount(),
+                        "itemViewCount", s.state().itemViewCount(),
+                        "purchaseAttemptCount", s.state().purchaseAttemptCount(),
+                        "purchaseCancelDoneCount", s.state().purchaseCancelDoneCount(),
+                        "impulseSignalCount", s.state().impulseSignalCount(),
+                        "cancelDoneRatio", s.cancelDoneRatio(),
+                        "attemptRatio", s.attemptRatio(),
+                        "openRatio", s.openRatio(),
+                        "viewRatio", s.viewRatio()
                 )
         );
     }

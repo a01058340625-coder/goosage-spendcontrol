@@ -1,22 +1,22 @@
-package com.goosage.app.spendcontrol.interpret;
+package com.goosage.app.spendcontrol;
 
 import java.time.LocalDate;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
 import com.goosage.domain.spendcontrol.SpendControlReadPort;
-import com.goosage.domain.spendcontrol.SpendControlState;
 
 @Service
-public class SpendControlInterpretationService {
+public class SpendControlTodayService {
 
     private final SpendControlReadPort spendControlReadPort;
 
-    public SpendControlInterpretationService(SpendControlReadPort spendControlReadPort) {
+    public SpendControlTodayService(SpendControlReadPort spendControlReadPort) {
         this.spendControlReadPort = spendControlReadPort;
     }
 
-    public SpendControlState interpret(long userId, LocalDate today) {
+    public Map<String, Object> today(long userId, LocalDate today) {
         int spendOpen = spendControlReadPort.todaySpendOpenCountFromEvents(userId, today);
         int itemView = spendControlReadPort.todayItemViewCountFromEvents(userId, today);
         int purchaseAttempt = spendControlReadPort.todayPurchaseAttemptCountFromEvents(userId, today);
@@ -25,13 +25,15 @@ public class SpendControlInterpretationService {
 
         int eventsCount = spendOpen + itemView + purchaseAttempt + purchaseCancelDone + impulseSignal;
 
-        return new SpendControlState(
-                spendOpen,
-                itemView,
-                purchaseAttempt,
-                purchaseCancelDone,
-                impulseSignal,
-                eventsCount
+        return Map.of(
+                "userId", userId,
+                "ymd", today,
+                "eventsCount", eventsCount,
+                "spendOpenCount", spendOpen,
+                "itemViewCount", itemView,
+                "purchaseAttemptCount", purchaseAttempt,
+                "purchaseCancelDoneCount", purchaseCancelDone,
+                "impulseSignalCount", impulseSignal
         );
     }
 }

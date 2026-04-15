@@ -1,41 +1,48 @@
 package com.goosage.domain.spendcontrol;
 
 public record SpendControlState(
-        int wrongReviews,
-        int quizSubmits,
-        int eventsCount,
-        int wrongReviewDoneCount
+        int spendOpenCount,
+        int itemViewCount,
+        int purchaseAttemptCount,
+        int purchaseCancelDoneCount,
+        int impulseSignalCount,
+        int eventsCount
 ) {
 
-	public int justOpenCount() {
-	    int value = eventsCount - quizSubmits - wrongReviewDoneCount;
-	    return Math.max(value, 0);
-	}
-
-    // ===== spendcontrol semantic aliases =====
-
-    // 충동 신호
-    public int impulseSignalCount() {
-        return wrongReviews;
+    public SpendControlState {
+        spendOpenCount = Math.max(spendOpenCount, 0);
+        itemViewCount = Math.max(itemViewCount, 0);
+        purchaseAttemptCount = Math.max(purchaseAttemptCount, 0);
+        purchaseCancelDoneCount = Math.max(purchaseCancelDoneCount, 0);
+        impulseSignalCount = Math.max(impulseSignalCount, 0);
+        eventsCount = Math.max(eventsCount, 0);
     }
 
-    // 소비 시도
-    public int purchaseAttempts() {
-        return quizSubmits;
+    public static SpendControlState empty() {
+        return new SpendControlState(0, 0, 0, 0, 0, 0);
     }
 
-    // 취소/차단/제어 완료
-    public int purchaseCancelDoneCount() {
-        return wrongReviewDoneCount;
+    public int controlGap() {
+        return Math.max((purchaseAttemptCount + impulseSignalCount) - purchaseCancelDoneCount, 0);
     }
 
-    // 진입/열기 성격의 행동
-    public int spendOpens() {
-        return justOpenCount();
+    public boolean hasAttempt() {
+        return purchaseAttemptCount > 0;
     }
 
-    // 아직 별도 집계가 없으므로 임시 0
-    public int itemViews() {
-        return 0;
+    public boolean hasImpulse() {
+        return impulseSignalCount > 0;
+    }
+
+    public boolean hasCancelDone() {
+        return purchaseCancelDoneCount > 0;
+    }
+
+    public boolean hasViewBias() {
+        return itemViewCount > 0 && purchaseAttemptCount <= 0 && impulseSignalCount <= 0;
+    }
+
+    public boolean isBlank() {
+        return eventsCount <= 0;
     }
 }

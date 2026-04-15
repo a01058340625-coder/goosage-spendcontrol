@@ -25,7 +25,7 @@ public class WrongHeavyRule implements PredictionRule {
         }
 
         return s.studiedToday()
-                && s.state().wrongReviews() >= 3;
+                && s.state().impulseSignalCount() >= 3;
     }
 
     @Override
@@ -33,13 +33,13 @@ public class WrongHeavyRule implements PredictionRule {
         return Prediction.of(
                 PredictionLevel.WARNING,
                 PredictionReasonCode.WRONG_HEAVY,
-                "위험 신호가 많이 쌓였어. 새 행동보다 회복 행동을 먼저 하자.",
+                "위험 신호가 많이 쌓였어. 새 행동보다 제어 행동을 먼저 하자.",
                 Map.of(
-                        "wrongReviews", s.state().wrongReviews(),
-                        "wrongReviewDoneCount", s.state().wrongReviewDoneCount(),
+                        "impulseSignalCount", s.state().impulseSignalCount(),
+                        "purchaseCancelDoneCount", s.state().purchaseCancelDoneCount(),
                         "eventsCount", s.state().eventsCount(),
-                        "quizSubmits", s.state().quizSubmits(),
-                        "wrongRatio", s.wrongRatio()
+                        "purchaseAttemptCount", s.state().purchaseAttemptCount(),
+                        "impulseRatio", s.impulseRatio()
                 )
         );
     }

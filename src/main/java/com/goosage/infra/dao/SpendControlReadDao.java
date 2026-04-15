@@ -1,192 +1,30 @@
 package com.goosage.infra.dao;
 
-import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Repository;
+public interface SpendControlReadDao {
 
-@Repository
-public class SpendControlReadDao {
+    Optional<SpendControlTodayRow> findToday(long userId);
 
-    private final JdbcTemplate jdbcTemplate;
+    Optional<LocalDateTime> lastEventAtAll(long userId);
 
-    public SpendControlReadDao(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+    int recentEventCount3d(long userId, LocalDate today);
 
-    public Optional<TodayRowRecord> findToday(long userId) {
+    int calcStreakDays(long userId, LocalDate today);
 
-    	String sql =
-    	        "SELECT " +
-    	        "  DATE(MAX(created_at)) AS ymd, " +
-    	        "  COUNT(*) AS events_count, " +
-    	        "  SUM(CASE WHEN type = 'PURCHASE_ATTEMPT' THEN 1 ELSE 0 END) AS quiz_submits, " +
-    	        "  SUM(CASE WHEN type = 'IMPULSE_SIGNAL' THEN 1 ELSE 0 END) AS wrong_reviews, " +
-    	        "  SUM(CASE WHEN type = 'PURCHASE_CANCEL_DONE' THEN 1 ELSE 0 END) AS wrong_review_done_count " +
-    	        "FROM spendcontrol_events " +
-    	        "WHERE user_id = ? " +
-    	        "  AND DATE(created_at) = CURDATE() " +
-    	        "HAVING COUNT(*) > 0";
+    int todaySpendOpenCountFromEvents(long userId, LocalDate today);
 
-        try {
-            TodayRowRecord row = jdbcTemplate.queryForObject(
-                    sql,
-                    (rs, rowNum) -> new TodayRowRecord(
-                            rs.getDate("ymd").toLocalDate(),
-                            rs.getInt("events_count"),
-                            rs.getInt("quiz_submits"),
-                            rs.getInt("wrong_reviews"),
-                            rs.getInt("wrong_review_done_count")
-                    ),
-                    userId
-            );
+    int todayItemViewCountFromEvents(long userId, LocalDate today);
 
-            return Optional.ofNullable(row);
+    int todayPurchaseAttemptCountFromEvents(long userId, LocalDate today);
 
-        } catch (org.springframework.dao.EmptyResultDataAccessException e) {
-            return Optional.empty();
-        }
-    }
+    int todayPurchaseCancelDoneCountFromEvents(long userId, LocalDate today);
 
-    public Optional<LocalDateTime> lastEventAtAll(long userId) {
-        String sql = "SELECT MAX(created_at) FROM spendcontrol_events WHERE user_id = ?";
-        Timestamp ts = jdbcTemplate.queryForObject(sql, Timestamp.class, userId);
-        return (ts == null) ? Optional.empty() : Optional.of(ts.toLocalDateTime());
-    }
+    int todayImpulseSignalCountFromEvents(long userId, LocalDate today);
 
-    public int calcStreakDays(long userId, LocalDate today) {
+    int recentImpulseSignalCount3d(long userId, LocalDate today);
 
-        String sql =
-                "SELECT DISTINCT DATE(created_at) AS ymd " +
-                "FROM spendcontrol_events " +
-                "WHERE user_id = ? " +
-                "ORDER BY ymd DESC";
-
-        List<LocalDate> days = jdbcTemplate.query(
-                sql,
-                (rs, rowNum) -> rs.getDate("ymd").toLocalDate(),
-                userId
-        );
-
-        if (days.isEmpty()) return 0;
-
-        LocalDate anchor = today;
-        if (!days.contains(today)) {
-            anchor = today.minusDays(1);
-        }
-
-        int streak = 0;
-        LocalDate cursor = anchor;
-
-        while (days.contains(cursor)) {
-            streak++;
-            cursor = cursor.minusDays(1);
-        }
-
-        return streak;
-    }
-
-    public int todayEventCountFromEvents(long userId, LocalDate today) {
-
-        String sql =
-                "SELECT COUNT(*) FROM spendcontrol_events WHERE user_id = ? AND created_at >= ? AND created_at < ?";
-
-        Timestamp from = Timestamp.valueOf(today.atStartOfDay());
-        Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());
-
-        Integer cnt = jdbcTemplate.queryForObject(sql, Integer.class, userId, from, to);
-        return (cnt == null) ? 0 : cnt;
-    }
-
-    public int recentEventCount3d(long userId, LocalDate today) {
-
-        String sql =
-                "SELECT COUNT(*) " +
-                "FROM spendcontrol_events " +
-                "WHERE user_id = ? " +
-                "  AND DATE(created_at) >= ? " +
-                "  AND DATE(created_at) <= ?";
-
-        LocalDate fromDate = today.minusDays(2);
-        LocalDate toDate = today;
-
-        Integer cnt = jdbcTemplate.queryForObject(
-                sql,
-                Integer.class,
-                userId,
-                java.sql.Date.valueOf(fromDate),
-                java.sql.Date.valueOf(toDate)
-        );
-
-        return (cnt == null) ? 0 : cnt;
-    }
-
-    public int recentWrong3d(long userId, LocalDate today) {
-
-        String sql =
-                "SELECT COUNT(*) FROM spendcontrol_events " +
-                "WHERE user_id = ? AND type = 'IMPULSE_SIGNAL' AND created_at >= ? AND created_at < ?";
-
-        Timestamp from = Timestamp.valueOf(today.minusDays(2).atStartOfDay());
-        Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());
-
-        Integer cnt = jdbcTemplate.queryForObject(sql, Integer.class, userId, from, to);
-        return (cnt == null) ? 0 : cnt;
-    }
-
-    public int recentWrongDone3d(long userId, LocalDate today) {
-
-        String sql =
-                "SELECT COUNT(*) FROM spendcontrol_events " +
-                "WHERE user_id = ? AND type = 'PURCHASE_CANCEL_DONE' AND created_at >= ? AND created_at < ?";
-
-        Timestamp from = Timestamp.valueOf(today.minusDays(2).atStartOfDay());
-        Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());
-
-        Integer cnt = jdbcTemplate.queryForObject(sql, Integer.class, userId, from, to);
-        return (cnt == null) ? 0 : cnt;
-    }
-
-    public int todayWrongFromEvents(long userId, LocalDate today) {
-
-        String sql =
-                "SELECT COUNT(*) FROM spendcontrol_events " +
-                "WHERE user_id = ? AND type = 'IMPULSE_SIGNAL' AND created_at >= ? AND created_at < ?";
-
-        Timestamp from = Timestamp.valueOf(today.atStartOfDay());
-        Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());
-
-        Integer cnt = jdbcTemplate.queryForObject(sql, Integer.class, userId, from, to);
-        return (cnt == null) ? 0 : cnt;
-    }
-
-    public int todayWrongDoneFromEvents(long userId, LocalDate today) {
-
-        String sql =
-                "SELECT COUNT(*) FROM spendcontrol_events " +
-                "WHERE user_id = ? AND type = 'PURCHASE_CANCEL_DONE' AND created_at >= ? AND created_at < ?";
-
-        Timestamp from = Timestamp.valueOf(today.atStartOfDay());
-        Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());
-
-        Integer cnt = jdbcTemplate.queryForObject(sql, Integer.class, userId, from, to);
-        return (cnt == null) ? 0 : cnt;
-    }
-
-    public int todayQuizFromEvents(long userId, LocalDate today) {
-
-        String sql =
-                "SELECT COUNT(*) FROM spendcontrol_events " +
-                "WHERE user_id = ? AND type = 'PURCHASE_ATTEMPT' AND created_at >= ? AND created_at < ?";
-
-        Timestamp from = Timestamp.valueOf(today.atStartOfDay());
-        Timestamp to   = Timestamp.valueOf(today.plusDays(1).atStartOfDay());
-
-        Integer cnt = jdbcTemplate.queryForObject(sql, Integer.class, userId, from, to);
-        return (cnt == null) ? 0 : cnt;
-    }
+    int recentPurchaseCancelDoneCount3d(long userId, LocalDate today);
 }

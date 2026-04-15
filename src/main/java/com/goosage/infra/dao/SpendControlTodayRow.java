@@ -1,15 +1,14 @@
-package com.goosage.domain.spendcontrol;
+package com.goosage.infra.dao;
 
 import java.time.LocalDate;
 
-public record TodayRow(
+public record SpendControlTodayRow(
         LocalDate ymd,
         int eventsCount,
         int spendOpenCount,
         int itemViewCount,
         int purchaseAttemptCount,
         int purchaseCancelDoneCount,
-        int impulseSignalCount,
-        Long recentKnowledgeId
+        int impulseSignalCount
 ) {
 }

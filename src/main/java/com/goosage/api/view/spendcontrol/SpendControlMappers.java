@@ -16,6 +16,8 @@ public final class SpendControlMappers {
                     0,
                     0,
                     0,
+                    0,
+                    0,
                     null,
                     null
             );
@@ -26,9 +28,11 @@ public final class SpendControlMappers {
                 s.studiedToday(),
                 s.streakDays(),
                 s.state().eventsCount(),
-                s.state().quizSubmits(),
-                s.state().wrongReviews(),
-                s.state().wrongReviewDoneCount(),
+                s.state().spendOpenCount(),
+                s.state().itemViewCount(),
+                s.state().purchaseAttemptCount(),
+                s.state().purchaseCancelDoneCount(),
+                s.state().impulseSignalCount(),
                 s.lastEventAt(),
                 s.recentKnowledgeId()
         );

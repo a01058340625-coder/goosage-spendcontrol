@@ -1,5 +1,7 @@
 package com.goosage.domain.predict.rules;
 
+import static java.util.Map.entry;
+
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -13,9 +15,14 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 @Component
 public class StableProgressRule implements PredictionRule {
 
+    private static final int EVENTS_MIN = 4;
+    private static final int CANCEL_DONE_MIN = 1;
+    private static final double IMPULSE_RATIO_MAX = 0.25;
+    private static final double CANCEL_DONE_RATIO_MIN = 0.15;
+
     @Override
     public int priority() {
-    	return 55;
+        return 50;
     }
 
     @Override
@@ -24,19 +31,36 @@ public class StableProgressRule implements PredictionRule {
             return false;
         }
 
-        if (s.state().eventsCount() < 4) {
+        if (!s.studiedToday()) {
             return false;
         }
 
-        double open = s.openRatio();
-        double quiz = s.quizRatio();
-        double wrong = s.wrongRatio();
-        double done = s.wrongDoneRatio();
+        int events = s.state().eventsCount();
+        int attempt = s.state().purchaseAttemptCount();
+        int impulse = s.state().impulseSignalCount();
+        int cancelDone = s.state().purchaseCancelDoneCount();
 
-        return open >= 0.1 && open <= 0.4
-                && quiz >= 0.2 && quiz <= 0.5
-                && wrong <= 0.4
-                && done <= 0.4;
+        if (events < EVENTS_MIN) {
+            return false;
+        }
+
+        if (cancelDone < CANCEL_DONE_MIN) {
+            return false;
+        }
+
+        if (attempt <= 0 && impulse <= 0) {
+            return false;
+        }
+
+        if (s.impulseRatio() > IMPULSE_RATIO_MAX) {
+            return false;
+        }
+
+        if (s.cancelDoneRatio() < CANCEL_DONE_RATIO_MIN) {
+            return false;
+        }
+
+        return cancelDone < (attempt + impulse);
     }
 
     @Override
@@ -44,13 +68,20 @@ public class StableProgressRule implements PredictionRule {
         return Prediction.of(
                 PredictionLevel.WARNING,
                 PredictionReasonCode.STABLE_PROGRESS,
-                "행동 흐름은 비교적 균형적이다. 지금 리듬을 유지하며 퀴즈를 조금 더 늘리자.",
-                Map.of(
-                        "openRatio", s.openRatio(),
-                        "quizRatio", s.quizRatio(),
-                        "wrongRatio", s.wrongRatio(),
-                        "wrongDoneRatio", s.wrongDoneRatio(),
-                        "eventsCount", s.state().eventsCount()
+                "완전 안전 단계는 아니지만 제어 흐름이 안정적으로 붙고 있다.",
+                Map.ofEntries(
+                        entry("eventsCount", s.state().eventsCount()),
+                        entry("spendOpenCount", s.state().spendOpenCount()),
+                        entry("itemViewCount", s.state().itemViewCount()),
+                        entry("purchaseAttemptCount", s.state().purchaseAttemptCount()),
+                        entry("purchaseCancelDoneCount", s.state().purchaseCancelDoneCount()),
+                        entry("impulseSignalCount", s.state().impulseSignalCount()),
+                        entry("attemptRatio", s.attemptRatio()),
+                        entry("cancelDoneRatio", s.cancelDoneRatio()),
+                        entry("impulseRatio", s.impulseRatio()),
+                        entry("recentEventCount3d", s.recentEventCount3d()),
+                        entry("streakDays", s.streakDays()),
+                        entry("daysSinceLastEvent", s.daysSinceLastEvent())
                 )
         );
     }
