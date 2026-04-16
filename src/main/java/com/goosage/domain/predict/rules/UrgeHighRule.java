@@ -13,8 +13,11 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 @Component
 public class UrgeHighRule implements PredictionRule {
 
-    private static final int IMPULSE_MIN = 2;
+    private static final int IMPULSE_MIN = 3;
     private static final int RECENT_3D_MIN = 4;
+    private static final int ATTEMPT_MAX = 2;
+    private static final int CANCEL_MAX = 1;
+    private static final double IMPULSE_RATIO_MIN = 0.25;
 
     @Override
     public int priority() {
@@ -33,10 +36,19 @@ public class UrgeHighRule implements PredictionRule {
 
         int impulse = s.state().impulseSignalCount();
         int cancelDone = s.state().purchaseCancelDoneCount();
+        int attempt = s.state().purchaseAttemptCount();
 
-        return impulse >= IMPULSE_MIN
-                && cancelDone == 0
-                && s.recentEventCount3d() >= RECENT_3D_MIN;
+        boolean impulseHigh = impulse >= IMPULSE_MIN;
+        boolean recentEnough = s.recentEventCount3d() >= RECENT_3D_MIN;
+        boolean attemptNotDominant = attempt <= ATTEMPT_MAX;
+        boolean cancelStillWeak = cancelDone <= CANCEL_MAX;
+        boolean impulseDominant = s.impulseRatio() >= IMPULSE_RATIO_MIN;
+
+        return impulseHigh
+                && recentEnough
+                && attemptNotDominant
+                && cancelStillWeak
+                && impulseDominant;
     }
 
     @Override
@@ -50,6 +62,7 @@ public class UrgeHighRule implements PredictionRule {
                         "purchaseCancelDoneCount", s.state().purchaseCancelDoneCount(),
                         "purchaseAttemptCount", s.state().purchaseAttemptCount(),
                         "recentEventCount3d", s.recentEventCount3d(),
+                        "impulseRatio", s.impulseRatio(),
                         "daysSinceLastEvent", s.daysSinceLastEvent()
                 )
         );

@@ -15,9 +15,10 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 @Component
 public class RelapseRiskRule implements PredictionRule {
 
-    private static final int ATTEMPT_MIN = 3;
+    private static final int ATTEMPT_MIN = 4;
     private static final int IMPULSE_MIN = 1;
-    private static final double PASSIVE_RATIO_MAX = 0.60;
+    private static final double PASSIVE_RATIO_MAX = 0.55;
+    private static final double ATTEMPT_RATIO_MIN = 0.30;
 
     @Override
     public int priority() {
@@ -37,14 +38,21 @@ public class RelapseRiskRule implements PredictionRule {
         int attempt = s.state().purchaseAttemptCount();
         int impulse = s.state().impulseSignalCount();
         int cancelDone = s.state().purchaseCancelDoneCount();
+
         double passiveRatio = s.openRatio() + s.viewRatio();
+        double attemptRatio = s.attemptRatio();
 
         boolean attemptHeavy = attempt >= ATTEMPT_MIN;
         boolean impulseExists = impulse >= IMPULSE_MIN;
-        boolean controlWeak = cancelDone < (attempt + impulse);
+        boolean controlWeak = cancelDone < attempt;
         boolean notJustBrowsing = passiveRatio <= PASSIVE_RATIO_MAX;
+        boolean attemptDominant = attemptRatio >= ATTEMPT_RATIO_MIN;
 
-        return attemptHeavy && impulseExists && controlWeak && notJustBrowsing;
+        return attemptHeavy
+                && impulseExists
+                && controlWeak
+                && notJustBrowsing
+                && attemptDominant;
     }
 
     @Override
