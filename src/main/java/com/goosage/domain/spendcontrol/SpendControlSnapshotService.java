@@ -26,12 +26,14 @@ public class SpendControlSnapshotService {
         int purchaseAttemptCount = readPort.todayPurchaseAttemptCountFromEvents(userId, nowDate);
         int purchaseCancelDoneCount = readPort.todayPurchaseCancelDoneCountFromEvents(userId, nowDate);
         int impulseSignalCount = readPort.todayImpulseSignalCountFromEvents(userId, nowDate);
+        int controlActionCount = readPort.todayControlActionCountFromEvents(userId, nowDate);
 
         int eventsCount = spendOpenCount
                 + itemViewCount
                 + purchaseAttemptCount
                 + purchaseCancelDoneCount
-                + impulseSignalCount;
+                + impulseSignalCount
+                + controlActionCount;
 
         System.out.println("[SNAPSHOT-SVC] user=" + userId
                 + " events=" + eventsCount
@@ -39,7 +41,8 @@ public class SpendControlSnapshotService {
                 + " view=" + itemViewCount
                 + " attempt=" + purchaseAttemptCount
                 + " cancelDone=" + purchaseCancelDoneCount
-                + " impulse=" + impulseSignalCount);
+                + " impulse=" + impulseSignalCount
+                + " controlAction=" + controlActionCount);
 
         Long recentKnowledgeId = null;
         boolean studiedToday = eventsCount > 0;
@@ -55,6 +58,7 @@ public class SpendControlSnapshotService {
                 purchaseAttemptCount,
                 purchaseCancelDoneCount,
                 impulseSignalCount,
+                controlActionCount,
                 eventsCount
         );
 

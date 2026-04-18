@@ -30,6 +30,7 @@ public class SpendControlReadDaoAdapter implements SpendControlReadPort {
                         r.purchaseAttemptCount(),
                         r.purchaseCancelDoneCount(),
                         r.impulseSignalCount(),
+                        r.controlActionCount(),
                         null
                 ));
     }
@@ -75,6 +76,11 @@ public class SpendControlReadDaoAdapter implements SpendControlReadPort {
     }
 
     @Override
+    public int todayControlActionCountFromEvents(long userId, LocalDate today) {
+        return dao.todayControlActionCountFromEvents(userId, today);
+    }
+
+    @Override
     public int recentImpulseSignalCount3d(long userId, LocalDate today) {
         return dao.recentImpulseSignalCount3d(userId, today);
     }
@@ -82,5 +88,10 @@ public class SpendControlReadDaoAdapter implements SpendControlReadPort {
     @Override
     public int recentPurchaseCancelDoneCount3d(long userId, LocalDate today) {
         return dao.recentPurchaseCancelDoneCount3d(userId, today);
+    }
+
+    @Override
+    public int recentControlActionCount3d(long userId, LocalDate today) {
+        return dao.recentControlActionCount3d(userId, today);
     }
 }

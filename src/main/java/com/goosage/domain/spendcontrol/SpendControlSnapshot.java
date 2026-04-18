@@ -45,12 +45,18 @@ public record SpendControlSnapshot(
         return ratio(state.impulseSignalCount(), state.eventsCount());
     }
 
+    public double controlActionRatio() {
+        return ratio(state.controlActionCount(), state.eventsCount());
+    }
+
     public double defensiveSuccessRatio() {
         int riskBase = state.purchaseAttemptCount() + state.impulseSignalCount();
+        int defenseBase = state.purchaseCancelDoneCount() + state.controlActionCount();
+
         if (riskBase <= 0) {
-            return state.purchaseCancelDoneCount() > 0 ? 1.0 : 0.0;
+            return defenseBase > 0 ? 1.0 : 0.0;
         }
-        return (double) state.purchaseCancelDoneCount() / riskBase;
+        return (double) defenseBase / riskBase;
     }
 
     public boolean hasRiskSignal() {
@@ -58,12 +64,14 @@ public record SpendControlSnapshot(
     }
 
     public boolean hasControlProgress() {
-        return state.purchaseCancelDoneCount() > 0;
+        return state.purchaseCancelDoneCount() > 0 || state.controlActionCount() > 0;
     }
 
     public boolean isControlSafe() {
-        return state.purchaseCancelDoneCount() >= (state.purchaseAttemptCount() + state.impulseSignalCount())
-                && (state.purchaseAttemptCount() + state.impulseSignalCount()) > 0;
+        int defense = state.purchaseCancelDoneCount() + state.controlActionCount();
+        int risk = state.purchaseAttemptCount() + state.impulseSignalCount();
+
+        return defense >= risk && risk > 0;
     }
 
     public int controlGap() {

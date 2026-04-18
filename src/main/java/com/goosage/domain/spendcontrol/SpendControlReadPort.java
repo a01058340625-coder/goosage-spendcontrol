@@ -6,13 +6,13 @@ import java.util.Optional;
 
 public interface SpendControlReadPort {
 
-    Optional<TodayRow> findToday(long userId, LocalDate nowDate);
+    Optional<TodayRow> findToday(long userId, LocalDate today);
 
     Optional<LocalDateTime> lastEventAtAll(long userId);
 
-    int calcStreakDays(long userId, LocalDate today);
-
     int recentEventCount3d(long userId, LocalDate today);
+
+    int calcStreakDays(long userId, LocalDate today);
 
     int todaySpendOpenCountFromEvents(long userId, LocalDate today);
 
@@ -24,7 +24,11 @@ public interface SpendControlReadPort {
 
     int todayImpulseSignalCountFromEvents(long userId, LocalDate today);
 
+    int todayControlActionCountFromEvents(long userId, LocalDate today);
+
     int recentImpulseSignalCount3d(long userId, LocalDate today);
 
     int recentPurchaseCancelDoneCount3d(long userId, LocalDate today);
+
+    int recentControlActionCount3d(long userId, LocalDate today);
 }

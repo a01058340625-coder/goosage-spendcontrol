@@ -9,6 +9,7 @@ public record SpendControlTodayRow(
         int itemViewCount,
         int purchaseAttemptCount,
         int purchaseCancelDoneCount,
-        int impulseSignalCount
+        int impulseSignalCount,
+        int controlActionCount
 ) {
 }

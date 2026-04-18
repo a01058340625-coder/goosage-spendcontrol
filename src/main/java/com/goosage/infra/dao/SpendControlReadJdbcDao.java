@@ -28,7 +28,8 @@ public class SpendControlReadJdbcDao implements SpendControlReadDao {
                 "  SUM(CASE WHEN type = 'ITEM_VIEW' THEN 1 ELSE 0 END) AS item_view_count, " +
                 "  SUM(CASE WHEN type = 'PURCHASE_ATTEMPT' THEN 1 ELSE 0 END) AS purchase_attempt_count, " +
                 "  SUM(CASE WHEN type = 'PURCHASE_CANCEL_DONE' THEN 1 ELSE 0 END) AS purchase_cancel_done_count, " +
-                "  SUM(CASE WHEN type = 'IMPULSE_SIGNAL' THEN 1 ELSE 0 END) AS impulse_signal_count " +
+                "  SUM(CASE WHEN type = 'IMPULSE_SIGNAL' THEN 1 ELSE 0 END) AS impulse_signal_count, " +
+                "  SUM(CASE WHEN type = 'CONTROL_ACTION' THEN 1 ELSE 0 END) AS control_action_count " +
                 "FROM spendcontrol_events " +
                 "WHERE user_id = ? " +
                 "  AND DATE(created_at) = CURDATE() " +
@@ -44,7 +45,8 @@ public class SpendControlReadJdbcDao implements SpendControlReadDao {
                             rs.getInt("item_view_count"),
                             rs.getInt("purchase_attempt_count"),
                             rs.getInt("purchase_cancel_done_count"),
-                            rs.getInt("impulse_signal_count")
+                            rs.getInt("impulse_signal_count"),
+                            rs.getInt("control_action_count")
                     ),
                     userId
             );
@@ -144,6 +146,11 @@ public class SpendControlReadJdbcDao implements SpendControlReadDao {
     }
 
     @Override
+    public int todayControlActionCountFromEvents(long userId, LocalDate today) {
+        return countByType(userId, today, "CONTROL_ACTION");
+    }
+
+    @Override
     public int recentImpulseSignalCount3d(long userId, LocalDate today) {
         return countRecentByType(userId, today, "IMPULSE_SIGNAL");
     }
@@ -151,6 +158,11 @@ public class SpendControlReadJdbcDao implements SpendControlReadDao {
     @Override
     public int recentPurchaseCancelDoneCount3d(long userId, LocalDate today) {
         return countRecentByType(userId, today, "PURCHASE_CANCEL_DONE");
+    }
+
+    @Override
+    public int recentControlActionCount3d(long userId, LocalDate today) {
+        return countRecentByType(userId, today, "CONTROL_ACTION");
     }
 
     private int countByType(long userId, LocalDate today, String type) {

@@ -24,7 +24,11 @@ public interface SpendControlReadDao {
 
     int todayImpulseSignalCountFromEvents(long userId, LocalDate today);
 
+    int todayControlActionCountFromEvents(long userId, LocalDate today);
+
     int recentImpulseSignalCount3d(long userId, LocalDate today);
 
     int recentPurchaseCancelDoneCount3d(long userId, LocalDate today);
+
+    int recentControlActionCount3d(long userId, LocalDate today);
 }

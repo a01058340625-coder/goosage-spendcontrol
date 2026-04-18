@@ -10,6 +10,7 @@ public record TodayRow(
         int purchaseAttemptCount,
         int purchaseCancelDoneCount,
         int impulseSignalCount,
+        int controlActionCount,
         Long recentKnowledgeId
 ) {
 }

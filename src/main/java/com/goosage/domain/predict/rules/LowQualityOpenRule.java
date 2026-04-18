@@ -14,6 +14,7 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 public class LowQualityOpenRule implements PredictionRule {
 
     private static final int EVENTS_MIN = 5;
+    private static final int IMPULSE_BLOCK_MIN = 3;
     private static final double PASSIVE_RATIO_MIN = 0.55;
     private static final double ATTEMPT_RATIO_MAX = 0.45;
 
@@ -35,6 +36,7 @@ public class LowQualityOpenRule implements PredictionRule {
         int events = s.state().eventsCount();
         int attempts = s.state().purchaseAttemptCount();
         int cancelDone = s.state().purchaseCancelDoneCount();
+        int impulse = s.state().impulseSignalCount();
 
         double passiveRatio = s.openRatio() + s.viewRatio();
         double attemptRatio = s.attemptRatio();
@@ -43,9 +45,14 @@ public class LowQualityOpenRule implements PredictionRule {
                 "[LOW_QUALITY_OPEN] events=" + events
                 + ", attempts=" + attempts
                 + ", cancelDone=" + cancelDone
+                + ", impulse=" + impulse
                 + ", passiveRatio=" + passiveRatio
                 + ", attemptRatio=" + attemptRatio
         );
+
+        if (impulse >= IMPULSE_BLOCK_MIN) {
+            return false;
+        }
 
         if (cancelDone >= 3) {
             return false;
@@ -54,8 +61,8 @@ public class LowQualityOpenRule implements PredictionRule {
         if (attempts > 0 && cancelDone >= attempts) {
             return false;
         }
-        
-        if (attempts == 0 && s.state().impulseSignalCount() == 0) {
+
+        if (attempts == 0 && impulse == 0) {
             return false;
         }
 
@@ -73,6 +80,7 @@ public class LowQualityOpenRule implements PredictionRule {
                 Map.of(
                         "passiveRatio", s.openRatio() + s.viewRatio(),
                         "attemptRatio", s.attemptRatio(),
+                        "impulseSignalCount", s.state().impulseSignalCount(),
                         "eventsCount", s.state().eventsCount(),
                         "studiedToday", s.studiedToday()
                 )

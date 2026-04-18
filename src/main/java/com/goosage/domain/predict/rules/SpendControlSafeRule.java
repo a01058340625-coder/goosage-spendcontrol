@@ -15,15 +15,17 @@ import com.goosage.domain.spendcontrol.SpendControlSnapshot;
 @Component
 public class SpendControlSafeRule implements PredictionRule {
 
-    private static final int EVENTS_MIN = 5;
-    private static final int CANCEL_DONE_MIN = 2;
+    private static final int EVENTS_MIN = 6;
+    private static final int DEFENSE_MIN = 4;
     private static final int RECENT_3D_MIN = 3;
-    private static final double PASSIVE_RATIO_MAX = 0.70;
-    private static final double CANCEL_RATIO_MIN = 0.20;
+    private static final int DEFENSE_GAP_MIN = 3;
+    private static final double PASSIVE_RATIO_MAX = 0.72;
+    private static final double DEFENSE_RATIO_MIN = 0.35;
+    private static final double STABILITY_RATIO_MIN = 0.45;
 
     @Override
     public int priority() {
-        return 16;
+        return 6;
     }
 
     @Override
@@ -40,12 +42,17 @@ public class SpendControlSafeRule implements PredictionRule {
         int attempt = s.state().purchaseAttemptCount();
         int impulse = s.state().impulseSignalCount();
         int cancelDone = s.state().purchaseCancelDoneCount();
+        int controlAction = s.state().controlActionCount();
+
+        int risk = attempt + impulse;
+        int defense = cancelDone + controlAction;
+        int defenseGap = defense - risk;
 
         if (events < EVENTS_MIN) {
             return false;
         }
 
-        if (cancelDone < CANCEL_DONE_MIN) {
+        if (defense < DEFENSE_MIN) {
             return false;
         }
 
@@ -53,23 +60,31 @@ public class SpendControlSafeRule implements PredictionRule {
             return false;
         }
 
-        if (impulse > 0) {
+        if (risk <= 0) {
             return false;
         }
 
-        // attempt가 남아 있는데 cancel이 덮지 못하면 safe 아님
-        if (attempt > 0 && cancelDone < attempt) {
+        if (defense <= risk) {
+            return false;
+        }
+
+        if (defenseGap < DEFENSE_GAP_MIN) {
             return false;
         }
 
         double passiveRatio = s.openRatio() + s.viewRatio();
-        double cancelRatio = s.cancelDoneRatio();
+        double defenseRatio = (double) defense / Math.max(events, 1);
+        double stabilityRatio = ((s.state().itemViewCount() * 0.5) + defense) / Math.max(events, 1);
 
         if (passiveRatio > PASSIVE_RATIO_MAX) {
             return false;
         }
 
-        if (cancelRatio < CANCEL_RATIO_MIN) {
+        if (defenseRatio < DEFENSE_RATIO_MIN) {
+            return false;
+        }
+
+        if (stabilityRatio < STABILITY_RATIO_MIN) {
             return false;
         }
 
@@ -84,14 +99,20 @@ public class SpendControlSafeRule implements PredictionRule {
         int attempt = s.state().purchaseAttemptCount();
         int impulse = s.state().impulseSignalCount();
         int cancelDone = s.state().purchaseCancelDoneCount();
+        int controlAction = s.state().controlActionCount();
+
+        int risk = attempt + impulse;
+        int defense = cancelDone + controlAction;
+        int defenseGap = defense - risk;
 
         double passiveRatio = s.openRatio() + s.viewRatio();
-        double cancelRatio = s.cancelDoneRatio();
+        double defenseRatio = (double) defense / Math.max(events, 1);
+        double stabilityRatio = ((view * 0.5) + defense) / Math.max(events, 1);
 
         return Prediction.of(
                 PredictionLevel.SAFE,
                 PredictionReasonCode.RECOVERY_SAFE,
-                "소비 시도와 충동 신호가 제어 완료 흐름으로 안정화되었다.",
+                "소비 흐름이 제어 행동 중심으로 안정화되었다. 현재 흐름을 유지하자.",
                 Map.ofEntries(
                         entry("streakDays", s.streakDays()),
                         entry("daysSinceLastEvent", s.daysSinceLastEvent()),
@@ -102,11 +123,18 @@ public class SpendControlSafeRule implements PredictionRule {
                         entry("purchaseAttemptCount", attempt),
                         entry("purchaseCancelDoneCount", cancelDone),
                         entry("impulseSignalCount", impulse),
+                        entry("controlActionCount", controlAction),
+                        entry("riskCount", risk),
+                        entry("defenseCount", defense),
+                        entry("defenseGap", defenseGap),
                         entry("studiedToday", s.studiedToday()),
                         entry("eventsMin", EVENTS_MIN),
-                        entry("cancelDoneMin", CANCEL_DONE_MIN),
-                        entry("cancelRatio", cancelRatio),
-                        entry("cancelRatioMin", CANCEL_RATIO_MIN),
+                        entry("defenseMin", DEFENSE_MIN),
+                        entry("defenseGapMin", DEFENSE_GAP_MIN),
+                        entry("defenseRatio", defenseRatio),
+                        entry("defenseRatioMin", DEFENSE_RATIO_MIN),
+                        entry("stabilityRatio", stabilityRatio),
+                        entry("stabilityRatioMin", STABILITY_RATIO_MIN),
                         entry("passiveRatio", passiveRatio),
                         entry("passiveRatioMax", PASSIVE_RATIO_MAX)
                 )

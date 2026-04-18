@@ -22,8 +22,14 @@ public class SpendControlInterpretationService {
         int purchaseAttempt = spendControlReadPort.todayPurchaseAttemptCountFromEvents(userId, today);
         int purchaseCancelDone = spendControlReadPort.todayPurchaseCancelDoneCountFromEvents(userId, today);
         int impulseSignal = spendControlReadPort.todayImpulseSignalCountFromEvents(userId, today);
+        int controlAction = spendControlReadPort.todayControlActionCountFromEvents(userId, today);
 
-        int eventsCount = spendOpen + itemView + purchaseAttempt + purchaseCancelDone + impulseSignal;
+        int eventsCount = spendOpen
+                + itemView
+                + purchaseAttempt
+                + purchaseCancelDone
+                + impulseSignal
+                + controlAction;
 
         return new SpendControlState(
                 spendOpen,
@@ -31,6 +37,7 @@ public class SpendControlInterpretationService {
                 purchaseAttempt,
                 purchaseCancelDone,
                 impulseSignal,
+                controlAction,
                 eventsCount
         );
     }
