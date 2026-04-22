@@ -16,6 +16,6 @@ public class SpendControlDebugDaoAdapter implements SpendControlDebugPort {
 
     @Override
     public void recordPing(Long userId) {
-        spendControlEventDao.recordEvent(userId, EventType.IMPULSE_SIGNAL, null, null, null);
+        spendControlEventDao.recordEvent(userId, EventType.IMPULSE_SIGNAL, null, null, null, null);
     }
 }

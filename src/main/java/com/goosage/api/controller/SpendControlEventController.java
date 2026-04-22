@@ -27,7 +27,7 @@ public class SpendControlEventController {
             return ApiResponse.fail("로그인이 필요합니다");
         }
 
-        spendControlEventService.record(userId, req.type(), req.knowledgeId());
+        spendControlEventService.record(userId, req.type(), req.knowledgeId(), null);
         return ApiResponse.ok(null);
     }
 }

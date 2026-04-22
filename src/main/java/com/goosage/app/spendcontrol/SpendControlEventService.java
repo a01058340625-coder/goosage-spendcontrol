@@ -1,5 +1,7 @@
 package com.goosage.app.spendcontrol;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +18,7 @@ public class SpendControlEventService {
     }
 
     @Transactional
-    public void record(Long userId, EventType type, Long knowledgeId) {
-        spendControlEventPort.record(userId, type, knowledgeId);
+    public void record(Long userId, EventType type, Long knowledgeId, LocalDateTime occurredAt) {
+        spendControlEventPort.record(userId, type, knowledgeId, occurredAt);
     }
 }

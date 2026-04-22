@@ -1,6 +1,7 @@
 package com.goosage.infra.dao;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,16 +22,23 @@ public class SpendControlEventDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void recordEvent(long userId, EventType eventType, String refType, Long refId, String payloadJson) {
+    public void recordEvent(long userId,
+                            EventType eventType,
+                            String refType,
+                            Long refId,
+                            String payloadJson,
+                            LocalDateTime occurredAt) {
+
+        LocalDateTime eventTime = (occurredAt == null) ? LocalDateTime.now() : occurredAt;
         Long sessionId = findActiveSessionId(userId);
 
         if (sessionId == null) {
-            sessionId = createSession(userId);
+            sessionId = createSession(userId, eventTime);
         }
 
-        insertEvent(sessionId, userId, eventType, refType, refId, payloadJson);
-        touchSession(sessionId);
-        upsertDaily(userId, LocalDate.now(), eventType);
+        insertEvent(sessionId, userId, eventType, refType, refId, payloadJson, eventTime);
+        touchSession(sessionId, eventTime);
+        upsertDaily(userId, eventTime.toLocalDate(), eventType, eventTime);
     }
 
     private Long findActiveSessionId(long userId) {
@@ -47,19 +55,31 @@ public class SpendControlEventDao {
         return list.isEmpty() ? null : list.get(0);
     }
 
-    private long createSession(long userId) {
+    private long createSession(long userId, LocalDateTime eventTime) {
         String sql = """
             INSERT INTO spendcontrol_sessions (user_id, started_at, total_events, last_event_at)
-            VALUES (?, NOW(), 0, NOW())
+            VALUES (?, ?, 0, ?)
         """;
 
-        jdbcTemplate.update(sql, userId);
+        jdbcTemplate.update(
+                sql,
+                userId,
+                java.sql.Timestamp.valueOf(eventTime),
+                java.sql.Timestamp.valueOf(eventTime)
+        );
 
         Long id = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
         return (id == null) ? 0L : id;
     }
 
-    private void insertEvent(long sessionId, long userId, EventType eventType, String refType, Long refId, String payloadJson) {
+    private void insertEvent(long sessionId,
+                             long userId,
+                             EventType eventType,
+                             String refType,
+                             Long refId,
+                             String payloadJson,
+                             LocalDateTime eventTime) {
+
         String sql = """
             INSERT INTO spendcontrol_events (
                 session_id,
@@ -71,7 +91,7 @@ public class SpendControlEventDao {
                 payload_json,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, NOW())
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         jdbcTemplate.update(
@@ -82,29 +102,35 @@ public class SpendControlEventDao {
                 eventType.name(),
                 refType,
                 refId,
-                payloadJson
+                payloadJson,
+                java.sql.Timestamp.valueOf(eventTime)
         );
 
         log.info(
-                "[SPEND_EVENT][INSERT] sessionId={}, userId={}, eventType={}",
+                "[SPEND_EVENT][INSERT] sessionId={}, userId={}, eventType={}, eventTime={}",
                 sessionId,
                 userId,
-                eventType.name()
+                eventType.name(),
+                eventTime
         );
     }
 
-    private void touchSession(long sessionId) {
+    private void touchSession(long sessionId, LocalDateTime eventTime) {
         String sql = """
             UPDATE spendcontrol_sessions
             SET total_events = total_events + 1,
-                last_event_at = NOW()
+                last_event_at = ?
             WHERE id = ?
         """;
 
-        jdbcTemplate.update(sql, sessionId);
+        jdbcTemplate.update(
+                sql,
+                java.sql.Timestamp.valueOf(eventTime),
+                sessionId
+        );
     }
 
-    private void upsertDaily(long userId, LocalDate ymd, EventType eventType) {
+    private void upsertDaily(long userId, LocalDate ymd, EventType eventType, LocalDateTime eventTime) {
         int quizInc = (eventType == EventType.ITEM_VIEW || eventType == EventType.PURCHASE_ATTEMPT) ? 1 : 0;
         int wrongInc = (eventType == EventType.IMPULSE_SIGNAL || eventType == EventType.PURCHASE_ATTEMPT) ? 1 : 0;
         int wrongDoneInc = (eventType == EventType.PURCHASE_CANCEL_DONE) ? 1 : 0;
@@ -119,13 +145,13 @@ public class SpendControlEventDao {
                 wrong_review_done_count,
                 last_event_at
             )
-            VALUES (?, ?, 1, ?, ?, ?, NOW())
+            VALUES (?, ?, 1, ?, ?, ?, ?)
             ON DUPLICATE KEY UPDATE
                 events_count = events_count + 1,
                 quiz_submits = quiz_submits + VALUES(quiz_submits),
                 wrong_reviews = wrong_reviews + VALUES(wrong_reviews),
                 wrong_review_done_count = wrong_review_done_count + VALUES(wrong_review_done_count),
-                last_event_at = NOW()
+                last_event_at = VALUES(last_event_at)
         """;
 
         jdbcTemplate.update(
@@ -134,7 +160,8 @@ public class SpendControlEventDao {
                 java.sql.Date.valueOf(ymd),
                 quizInc,
                 wrongInc,
-                wrongDoneInc
+                wrongDoneInc,
+                java.sql.Timestamp.valueOf(eventTime)
         );
     }
 }

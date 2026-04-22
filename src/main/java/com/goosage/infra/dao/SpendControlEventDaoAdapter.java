@@ -1,5 +1,7 @@
 package com.goosage.infra.dao;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Component;
 
 import com.goosage.domain.EventType;
@@ -15,8 +17,8 @@ public class SpendControlEventDaoAdapter implements SpendControlEventPort {
     }
 
     @Override
-    public void record(Long userId, EventType type, Long knowledgeId) {
+    public void record(Long userId, EventType type, Long knowledgeId, LocalDateTime occurredAt) {
         String refType = (knowledgeId == null) ? null : "KNOWLEDGE";
-        spendControlEventDao.recordEvent(userId, type, refType, knowledgeId, null);
+        spendControlEventDao.recordEvent(userId, type, refType, knowledgeId, null, occurredAt);
     }
 }

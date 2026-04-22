@@ -1,6 +1,7 @@
 package com.goosage.api.controller.internal;
 
 import java.util.Map;
+import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -44,7 +45,19 @@ public class InternalSpendControlController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "userId/type required");
         }
 
-        spendControlEventService.record(userId, EventType.valueOf(typeStr), knowledgeId);
+        Object occurredAtRaw = body.get("occurredAt");
+
+        LocalDateTime occurredAt = null;
+        if (occurredAtRaw != null) {
+            occurredAt = LocalDateTime.parse(occurredAtRaw.toString());
+        }
+
+        spendControlEventService.record(
+                userId,
+                EventType.valueOf(typeStr),
+                knowledgeId,
+                occurredAt
+        );
 
         return ApiResponse.ok(null);
     }
