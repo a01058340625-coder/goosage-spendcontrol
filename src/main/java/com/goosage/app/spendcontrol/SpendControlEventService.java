@@ -18,7 +18,38 @@ public class SpendControlEventService {
     }
 
     @Transactional
-    public void record(Long userId, EventType type, Long knowledgeId, LocalDateTime occurredAt) {
-        spendControlEventPort.record(userId, type, knowledgeId, occurredAt);
+    public void record(
+            Long userId,
+            EventType type,
+            Long knowledgeId,
+            LocalDateTime occurredAt,
+            boolean isBrainAction,
+            String brainActionType,
+            String brainPatternType
+    ) {
+        String payloadJson = buildPayloadJson(type, isBrainAction, brainActionType, brainPatternType);
+
+        spendControlEventPort.record(userId, type, knowledgeId, occurredAt, payloadJson);
+    }
+
+    private String buildPayloadJson(
+            EventType type,
+            boolean isBrainAction,
+            String brainActionType,
+            String brainPatternType
+    ) {
+        if (!isBrainAction) {
+            return "{\"source\":\"user\"}";
+        }
+
+        String actionValue = (brainActionType == null || brainActionType.isBlank())
+                ? type.name()
+                : brainActionType;
+
+        String patternValue = (brainPatternType == null || brainPatternType.isBlank())
+                ? ""
+                : ",\"brainPatternType\":\"" + brainPatternType + "\"";
+
+        return "{\"source\":\"brain\",\"brainActionType\":\"" + actionValue + "\"" + patternValue + "}";
     }
 }
