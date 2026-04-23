@@ -28,8 +28,9 @@ public class SpendControlEventService {
             String brainPatternType
     ) {
         String payloadJson = buildPayloadJson(type, isBrainAction, brainActionType, brainPatternType);
+        String source = isBrainAction ? "brain" : "user";
 
-        spendControlEventPort.record(userId, type, knowledgeId, occurredAt, payloadJson);
+        spendControlEventPort.record(userId, type, knowledgeId, occurredAt, payloadJson, source);
     }
 
     private String buildPayloadJson(

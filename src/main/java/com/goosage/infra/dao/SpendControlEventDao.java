@@ -27,6 +27,7 @@ public class SpendControlEventDao {
                             String refType,
                             Long refId,
                             String payloadJson,
+                            String source,
                             LocalDateTime occurredAt) {
 
         LocalDateTime eventTime = (occurredAt == null) ? LocalDateTime.now() : occurredAt;
@@ -36,7 +37,7 @@ public class SpendControlEventDao {
             sessionId = createSession(userId, eventTime);
         }
 
-        insertEvent(sessionId, userId, eventType, refType, refId, payloadJson, eventTime);
+        insertEvent(sessionId, userId, eventType, refType, refId, payloadJson, source, eventTime);
         touchSession(sessionId, eventTime);
         upsertDaily(userId, eventTime.toLocalDate(), eventType, eventTime);
     }
@@ -78,6 +79,7 @@ public class SpendControlEventDao {
                              String refType,
                              Long refId,
                              String payloadJson,
+                             String source,
                              LocalDateTime eventTime) {
 
         String sql = """
@@ -89,9 +91,10 @@ public class SpendControlEventDao {
                 ref_type,
                 ref_id,
                 payload_json,
+                source,
                 created_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
 
         jdbcTemplate.update(
@@ -103,14 +106,16 @@ public class SpendControlEventDao {
                 refType,
                 refId,
                 payloadJson,
+                source,
                 java.sql.Timestamp.valueOf(eventTime)
         );
 
         log.info(
-                "[SPEND_EVENT][INSERT] sessionId={}, userId={}, eventType={}, eventTime={}",
+                "[SPEND_EVENT][INSERT] sessionId={}, userId={}, eventType={}, source={}, eventTime={}",
                 sessionId,
                 userId,
                 eventType.name(),
+                source,
                 eventTime
         );
     }

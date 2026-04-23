@@ -17,8 +17,13 @@ public class SpendControlEventDaoAdapter implements SpendControlEventPort {
     }
 
     @Override
-    public void record(Long userId, EventType type, Long knowledgeId, LocalDateTime occurredAt, String payloadJson) {
+    public void record(Long userId,
+                       EventType type,
+                       Long knowledgeId,
+                       LocalDateTime occurredAt,
+                       String payloadJson,
+                       String source) {
         String refType = (knowledgeId == null) ? null : "KNOWLEDGE";
-        spendControlEventDao.recordEvent(userId, type, refType, knowledgeId, payloadJson, occurredAt);
+        spendControlEventDao.recordEvent(userId, type, refType, knowledgeId, payloadJson, source, occurredAt);
     }
 }
